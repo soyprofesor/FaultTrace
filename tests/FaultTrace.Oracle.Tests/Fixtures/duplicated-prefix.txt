@@ -1,0 +1,4 @@
+ORA-20001: ORA-20001: Insufficient balance
+ORA-06512: at "SALES.PAYMENT", line 40
+ORA-06512: at "SALES.PAYMENT", line 12
+ORA-06512: at line 1

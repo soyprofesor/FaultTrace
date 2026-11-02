@@ -1,0 +1,4 @@
+ORA-01400: невозможно вставить NULL в ("APP"."ORDERS"."TREASURY_CODE")
+ORA-06512: на  "APP.ORDER_REQ", line 1749
+ORA-06512: на  "APP.ORDER_PACK", line 775
+ORA-06512: на  line 1

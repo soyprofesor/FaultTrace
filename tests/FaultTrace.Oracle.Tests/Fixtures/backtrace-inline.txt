@@ -1,0 +1,2 @@
+ORA-20010: Failed to save the order ORA-06512: at "APP.ORDER_REQ", line 1749
+ORA-06512: at line 1

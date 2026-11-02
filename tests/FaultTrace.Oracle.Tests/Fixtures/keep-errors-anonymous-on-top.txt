@@ -1,0 +1,6 @@
+ORA-20005: Could not save the order
+ORA-06512: at "APP.ORDER_PACK", line 790
+ORA-06512: at line 1
+ORA-01400: cannot insert NULL into ("APP"."ORDERS"."TREASURY_CODE")
+ORA-06512: at "APP.ORDER_REQ", line 1749
+ORA-06512: at "APP.ORDER_PACK", line 775

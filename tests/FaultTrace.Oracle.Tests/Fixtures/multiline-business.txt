@@ -1,0 +1,4 @@
+ORA-20003: Payment was rejected.
+Contact your manager.
+ORA-06512: at "SALES.PAYMENT", line 9
+ORA-06512: at line 1

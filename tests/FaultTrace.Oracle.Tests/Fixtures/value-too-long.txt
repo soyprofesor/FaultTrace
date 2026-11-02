@@ -1,0 +1,3 @@
+ORA-12899: value too large for column "APP"."ORDERS"."CODE" (actual: 12, maximum: 10)
+ORA-06512: at "APP.ORDER_PACK", line 60
+ORA-06512: at line 1

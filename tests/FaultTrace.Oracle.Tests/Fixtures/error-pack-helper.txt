@@ -1,0 +1,4 @@
+ORA-20001: Customer is blocked
+ORA-06512: at "CORE.ERROR_PACK", line 15
+ORA-06512: at "APP.ORDER_PACK", line 300
+ORA-06512: at line 1

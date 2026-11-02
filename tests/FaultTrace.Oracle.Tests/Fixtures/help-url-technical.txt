@@ -1,0 +1,4 @@
+ORA-00001: unique constraint (APP.UQ_ORDERS_CODE) violated
+ORA-06512: at "APP.ORDER_PACK", line 50
+ORA-06512: at line 1
+Help: https://docs.oracle.com/error-help/db/ora-00001/

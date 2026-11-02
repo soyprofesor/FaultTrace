@@ -1,0 +1,1 @@
+ORA-03113: end-of-file on communication channel

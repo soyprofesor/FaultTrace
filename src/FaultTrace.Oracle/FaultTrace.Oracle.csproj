@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="FaultTrace.Oracle.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\FaultTrace.Core\FaultTrace.Core.csproj" />
   </ItemGroup>
 

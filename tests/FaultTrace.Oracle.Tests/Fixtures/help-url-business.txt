@@ -1,0 +1,3 @@
+ORA-20002: Contract has expired
+Help: https://docs.oracle.com/error-help/db/ora-20002/
+ORA-06512: at "SALES.PAYMENT", line 7

@@ -1,0 +1,4 @@
+ORA-20001: ORA-01400: cannot insert NULL into ("APP"."ORDERS"."TREASURY_CODE")
+ORA-06512: at "CORE.ERROR_PACK", line 15
+ORA-06512: at "APP.ORDER_PACK", line 300
+ORA-06512: at line 1

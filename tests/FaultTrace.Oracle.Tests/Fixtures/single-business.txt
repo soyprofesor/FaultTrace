@@ -1,0 +1,3 @@
+ORA-20001: Order amount must be positive
+ORA-06512: at "APP.ORDER_PACK", line 120
+ORA-06512: at line 1
