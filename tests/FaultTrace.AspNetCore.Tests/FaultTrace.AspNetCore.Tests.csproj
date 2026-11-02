@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FaultTrace.AspNetCore\FaultTrace.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\FaultTrace.Oracle\FaultTrace.Oracle.csproj" />
   </ItemGroup>
 
   <ItemGroup>

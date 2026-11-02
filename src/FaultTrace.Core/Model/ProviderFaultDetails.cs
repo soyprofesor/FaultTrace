@@ -21,6 +21,7 @@ public sealed class ProviderFaultDetails
     /// <param name="chain">The error segments, with re-raise boundaries preserved.</param>
     /// <param name="details">Named values extracted from the error, for example a table or column name.</param>
     /// <param name="rawMessage">The complete original message.</param>
+    /// <param name="isUnmapped">Whether the provider doesn't know this error code yet.</param>
     /// <exception cref="ArgumentException"><paramref name="provider"/> is empty.</exception>
     public ProviderFaultDetails(
         string provider,
@@ -29,7 +30,8 @@ public sealed class ProviderFaultDetails
         FaultFrame? entry = null,
         IEnumerable<FaultSegment>? chain = null,
         IReadOnlyDictionary<string, string>? details = null,
-        string? rawMessage = null)
+        string? rawMessage = null,
+        bool isUnmapped = false)
     {
         Provider = Guard.NotEmpty(provider, nameof(provider));
         NativeCode = nativeCode;
@@ -39,6 +41,7 @@ public sealed class ProviderFaultDetails
         Details = new ReadOnlyDictionary<string, string>(
             details?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new Dictionary<string, string>());
         RawMessage = rawMessage;
+        IsUnmapped = isUnmapped;
     }
 
     /// <summary>The provider name, for example <c>Oracle</c>.</summary>
@@ -61,4 +64,7 @@ public sealed class ProviderFaultDetails
 
     /// <summary>The complete original message, or <see langword="null"/> if unknown.</summary>
     public string? RawMessage { get; }
+
+    /// <summary>Whether the provider doesn't know this error code yet, so the catalog can grow from real data.</summary>
+    public bool IsUnmapped { get; }
 }

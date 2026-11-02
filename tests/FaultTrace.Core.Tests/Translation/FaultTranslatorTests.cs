@@ -1,0 +1,327 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using FaultTrace.Core.Abstractions;
+using FaultTrace.Core.Localization;
+using FaultTrace.Core.Logging;
+using FaultTrace.Core.Model;
+using FaultTrace.Core.Options;
+using FaultTrace.Core.Translation;
+using Microsoft.Extensions.Logging;
+using Shouldly;
+using Xunit;
+
+namespace FaultTrace.Core.Tests.Translation;
+
+public class FaultTranslatorTests
+{
+    private readonly CapturingLogger _logger = new CapturingLogger();
+
+    [Fact]
+    public void Translate_UnknownException_IsGenericUnexpected()
+    {
+        var exception = new InvalidOperationException("secret table name");
+
+        var fault = Create().Translate(exception, "ru");
+
+        fault.Category.ShouldBe(FaultCategory.Internal);
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+        fault.Status.ShouldBe(500);
+        fault.UserMessage.ShouldBe("Произошла непредвиденная ошибка. Обратитесь в службу поддержки и укажите код ошибки.");
+        fault.UserMessage.ShouldNotContain("secret");
+        fault.ErrorId.Length.ShouldBe(9);
+        fault.Provider.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Translate_UsesTheFirstProviderThatRecognizesTheException()
+    {
+        var fault = Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context => null),
+            new FakeProvider(context => Business(context, "first")),
+            new FakeProvider(context => Business(context, "second")),
+        }).Translate(new InvalidOperationException());
+
+        fault.UserMessage.ShouldBe("first");
+    }
+
+    [Fact]
+    public void Translate_PassesResolvedCultureAndIdsToProvider()
+    {
+        FaultContext? seen = null;
+        var fault = Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context =>
+            {
+                seen = context;
+                return Business(context, "text");
+            }),
+        }).Translate(new InvalidOperationException(), "uz-UZ");
+
+        seen!.Culture.ShouldBe("uz-Latn");
+        seen.ErrorId.ShouldBe(fault.ErrorId);
+    }
+
+    [Fact]
+    public void Translate_FailingProvider_IsLoggedAndTheNextOneIsUsed()
+    {
+        var fault = Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context => throw new InvalidOperationException("provider failure")),
+            new FakeProvider(context => Business(context, "second")),
+        }).Translate(new InvalidOperationException());
+
+        fault.UserMessage.ShouldBe("second");
+        _logger.Entries.ShouldContain(entry => entry.Exception.Message == "provider failure" && entry.Level == LogLevel.Error);
+    }
+
+    [Fact]
+    public void Translate_FailingProviderAlone_GivesUnexpected()
+    {
+        var fault = Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context => throw new InvalidOperationException("provider failure")),
+        }).Translate(new ArgumentException());
+
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+    }
+
+    [Fact]
+    public void Translate_FailingMessageProvider_GivesHardCodedFallback()
+    {
+        var translator = new FaultTranslator(
+            Array.Empty<IFaultProvider>(),
+            Array.Empty<IFaultHook>(),
+            new BrokenMessageProvider(),
+            _logger);
+
+        var fault = translator.Translate(new InvalidOperationException());
+
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+        fault.Status.ShouldBe(500);
+        fault.UserMessage.ShouldBe("An unexpected error occurred.");
+        fault.ErrorId.Length.ShouldBe(9);
+    }
+
+    [Fact]
+    public void Translate_FailingLogger_StillReturnsFault()
+    {
+        _logger.ThrowOnLog = true;
+
+        Create().Translate(new InvalidOperationException()).Code.ShouldBe(FaultCodes.Unexpected);
+    }
+
+    [Fact]
+    public void Translate_NullException_Throws()
+    {
+        Should.Throw<ArgumentNullException>(() => Create().Translate(null!));
+    }
+
+    [Fact]
+    public void Translate_LogsOnceAndReusesErrorIdWhenRethrown()
+    {
+        var translator = Create();
+        var exception = new InvalidOperationException();
+
+        var local = translator.Translate(exception);
+        var global = translator.Translate(exception);
+
+        global.ErrorId.ShouldBe(local.ErrorId);
+        _logger.Entries.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Translate_ReusesErrorIdWhenWrappedInAnotherException()
+    {
+        var translator = Create();
+        var inner = new InvalidOperationException();
+        var local = translator.Translate(inner);
+
+        var global = translator.Translate(new ApplicationException("outer", inner));
+
+        global.ErrorId.ShouldBe(local.ErrorId);
+        _logger.Entries.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Translate_DifferentExceptionsGetDifferentIds()
+    {
+        var translator = Create();
+
+        translator.Translate(new InvalidOperationException()).ErrorId
+            .ShouldNotBe(translator.Translate(new InvalidOperationException()).ErrorId);
+    }
+
+    [Fact]
+    public void Translate_LogsStructuredProperties()
+    {
+        var exception = new InvalidOperationException();
+        var details = new ProviderFaultDetails(
+            "Oracle",
+            "ORA-01400",
+            new FaultFrame("APP.ORDER_REQ", 1749),
+            new FaultFrame("APP.ORDER_PACK", 775),
+            new[] { new FaultSegment("ORA-01400", "text", new[] { new FaultFrame("APP.ORDER_REQ", 1749), new FaultFrame(null, 1) }) },
+            new Dictionary<string, string> { ["column"] = "CODE" },
+            "raw");
+
+        var fault = Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context => new Fault(context.ErrorId, FaultCategory.Validation, FaultCodes.RequiredField, "text", 400, provider: details)),
+        }).Translate(exception, "ru");
+
+        var entry = _logger.Entries.Single();
+        entry.Exception.ShouldBeSameAs(exception);
+        entry.Properties["ErrorId"].ShouldBe(fault.ErrorId);
+        entry.Properties["Code"].ShouldBe(FaultCodes.RequiredField);
+        entry.Properties["Status"].ShouldBe(400);
+        entry.Properties["Category"].ShouldBe(FaultCategory.Validation);
+        entry.Properties["NativeCode"].ShouldBe("ORA-01400");
+        entry.Properties["Origin"].ShouldBe("APP.ORDER_REQ:1749");
+        entry.Properties["Entry"].ShouldBe("APP.ORDER_PACK:775");
+        entry.Properties["RawMessage"].ShouldBe("raw");
+        entry.Properties["Culture"].ShouldBe("ru");
+        entry.Properties["Unmapped"].ShouldBe(false);
+        ((string[])entry.Properties["Chain"]).ShouldBe(new[] { "ORA-01400 [APP.ORDER_REQ:1749 > anonymous:1]" });
+    }
+
+    [Fact]
+    public void Translate_LogsUnmappedMarker()
+    {
+        Create(providers: new IFaultProvider[]
+        {
+            new FakeProvider(context => new Fault(
+                context.ErrorId,
+                FaultCategory.Internal,
+                FaultCodes.Unexpected,
+                "text",
+                500,
+                provider: new ProviderFaultDetails("Oracle", isUnmapped: true))),
+        }).Translate(new InvalidOperationException());
+
+        _logger.Entries.Single().Properties["Unmapped"].ShouldBe(true);
+    }
+
+    [Theory]
+    [InlineData(FaultCategory.Internal, LogLevel.Error)]
+    [InlineData(FaultCategory.Business, LogLevel.Warning)]
+    [InlineData(FaultCategory.Validation, LogLevel.Warning)]
+    [InlineData(FaultCategory.Conflict, LogLevel.Warning)]
+    [InlineData(FaultCategory.Transient, LogLevel.Warning)]
+    [InlineData(FaultCategory.Timeout, LogLevel.Warning)]
+    [InlineData(FaultCategory.Unauthorized, LogLevel.Information)]
+    [InlineData(FaultCategory.Forbidden, LogLevel.Information)]
+    [InlineData(FaultCategory.NotFound, LogLevel.Information)]
+    [InlineData(FaultCategory.ClientClosed, LogLevel.Information)]
+    public void GetLevel_FollowsTheCategory(FaultCategory category, LogLevel expected)
+    {
+        FaultLogger.GetLevel(category).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Translate_UsesCurrentActivityAsTraceId()
+    {
+        var activity = new Activity("test");
+        activity.SetIdFormat(ActivityIdFormat.W3C);
+        activity.Start();
+
+        try
+        {
+            var fault = Create().Translate(new InvalidOperationException());
+
+            fault.TraceId.ShouldBe(activity.TraceId.ToHexString());
+        }
+        finally
+        {
+            activity.Stop();
+        }
+    }
+
+    [Fact]
+    public void Translate_WithoutActivity_HasNoTraceId()
+    {
+        Activity.Current = null;
+
+        Create().Translate(new InvalidOperationException()).TraceId.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Translate_RunsHooksOnce()
+    {
+        var hook = new FakeHook();
+        var translator = Create(hooks: new IFaultHook[] { hook });
+        var exception = new InvalidOperationException();
+
+        var fault = translator.Translate(exception);
+        translator.Translate(exception);
+
+        hook.Calls.Single().ShouldBe((fault, exception));
+    }
+
+    [Fact]
+    public void Translate_FailingHook_IsLoggedAndOthersStillRun()
+    {
+        var hook = new FakeHook();
+        var fault = Create(hooks: new IFaultHook[] { new FakeHook(new InvalidOperationException("hook failure")), hook })
+            .Translate(new InvalidOperationException());
+
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+        hook.Calls.Count.ShouldBe(1);
+        _logger.Entries.ShouldContain(entry => entry.Exception.Message == "hook failure");
+    }
+
+    private FaultTranslator Create(IFaultProvider[]? providers = null, IFaultHook[]? hooks = null)
+    {
+        return new FaultTranslator(
+            providers ?? Array.Empty<IFaultProvider>(),
+            hooks ?? Array.Empty<IFaultHook>(),
+            new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(new FaultTraceOptions())),
+            _logger);
+    }
+
+    private static Fault Business(FaultContext context, string text) =>
+        new Fault(context.ErrorId, FaultCategory.Business, FaultCodes.Business, text, 400, traceId: context.TraceId);
+
+    private sealed class FakeProvider : IFaultProvider
+    {
+        private readonly Func<FaultContext, Fault?> _translate;
+
+        public FakeProvider(Func<FaultContext, Fault?> translate)
+        {
+            _translate = translate;
+        }
+
+        public Fault? TryTranslate(Exception exception, FaultContext context) => _translate(context);
+    }
+
+    private sealed class FakeHook : IFaultHook
+    {
+        private readonly Exception? _failure;
+
+        public FakeHook(Exception? failure = null)
+        {
+            _failure = failure;
+        }
+
+        public List<(Fault Fault, Exception Exception)> Calls { get; } = new List<(Fault, Exception)>();
+
+        public void OnFault(Fault fault, Exception exception)
+        {
+            if (_failure != null)
+            {
+                throw _failure;
+            }
+
+            Calls.Add((fault, exception));
+        }
+    }
+
+    private sealed class BrokenMessageProvider : IFaultMessageProvider
+    {
+        public string ResolveCulture(string? culture) => throw new InvalidOperationException("Message failure");
+
+        public FaultMessage Get(string code, string culture) => throw new InvalidOperationException("Message failure");
+    }
+}
