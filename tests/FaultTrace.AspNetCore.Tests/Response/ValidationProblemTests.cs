@@ -83,7 +83,45 @@ public class ValidationProblemTests
 
         var problem = await PostAsync(app, "/api/orders", "{\"name\":\"a\",\"amount\":\"not a number\"}");
 
-        problem.Json.GetProperty("errors").TryGetProperty("amount", out _).ShouldBeTrue();
+        var errors = problem.Json.GetProperty("errors");
+        errors.TryGetProperty("amount", out _).ShouldBeTrue();
+        errors.TryGetProperty("request", out _).ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("not json")]
+    [InlineData("")]
+    [InlineData("null")]
+    public async Task UnreadBody_HasOnlyTheDetail(string body)
+    {
+        using var app = await StartAsync();
+
+        var problem = await PostAsync(app, "/api/orders", body);
+
+        problem.Status.ShouldBe(400);
+        problem.Get("code").ShouldBe(FaultCodes.Validation);
+        problem.Get("detail").ShouldBe("Some of the submitted data is invalid.");
+        problem.Has("errors").ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task ErrorAboutTheWholeModel_IsKept()
+    {
+        using var app = await StartAsync();
+
+        var problem = await PostAsync(app, "/api/orders/whole-model", "{}");
+
+        problem.Json.GetProperty("errors").GetProperty(string.Empty)[0].GetString().ShouldBe("Set one of the fields");
+    }
+
+    [Fact]
+    public async Task OwnErrorNamedLikeTheParameter_IsKept()
+    {
+        using var app = await StartAsync();
+
+        var problem = await PostAsync(app, "/api/orders/own-request-error", "{\"name\":\"a\"}");
+
+        problem.Json.GetProperty("errors").GetProperty("request")[0].GetString().ShouldBe("Own error");
     }
 
     [Fact]
@@ -232,6 +270,14 @@ public class OrderRequest
     public List<OrderItemRequest>? Items { get; set; }
 }
 
+public class WholeModelRequest : IValidatableObject
+{
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        yield return new ValidationResult("Set one of the fields");
+    }
+}
+
 public class OrderItemRequest
 {
     [Required]
@@ -249,6 +295,16 @@ public class OrdersController : ControllerBase
     public IActionResult Manual()
     {
         ModelState.AddModelError("Code", "Bad code");
+        return ValidationProblem();
+    }
+
+    [HttpPost("whole-model")]
+    public IActionResult WholeModel([FromBody] WholeModelRequest request) => Ok();
+
+    [HttpPost("own-request-error")]
+    public IActionResult OwnRequestError([FromBody] OrderRequest request)
+    {
+        ModelState.AddModelError(nameof(request), "Own error");
         return ValidationProblem();
     }
 

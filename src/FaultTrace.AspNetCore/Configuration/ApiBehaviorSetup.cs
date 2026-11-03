@@ -23,6 +23,6 @@ internal sealed class ApiBehaviorSetup : IPostConfigureOptions<ApiBehaviorOption
 
         // Otherwise [ApiController] fills an empty 404 or 415 with MVC's own ProblemDetails body.
         options.SuppressMapClientErrors = true;
-        options.InvalidModelStateResponseFactory = _ => new ValidationProblemResult();
+        options.InvalidModelStateResponseFactory = _ => new ValidationProblemResult(isFromBinding: true);
     }
 }

@@ -11,17 +11,20 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace FaultTrace.AspNetCore.Response;
 
 internal sealed class ValidationProblemResult : IActionResult
 {
     private readonly ModelStateDictionary? _modelState;
+    private readonly bool _isFromBinding;
 
-    // Without a dictionary, the errors come from the action's own model state.
-    public ValidationProblemResult(ModelStateDictionary? modelState = null)
+    // Without a dictionary, the errors come from the action's own model state. From binding means the action never ran.
+    public ValidationProblemResult(ModelStateDictionary? modelState = null, bool isFromBinding = false)
     {
         _modelState = modelState;
+        _isFromBinding = isFromBinding;
     }
 
     public async Task ExecuteResultAsync(ActionContext context)
@@ -38,32 +41,66 @@ internal sealed class ValidationProblemResult : IActionResult
             FaultCodes.Validation,
             StatusCodes.Status400BadRequest,
             culture,
-            GetErrors(_modelState ?? context.ModelState, generic));
+            GetErrors(_modelState ?? context.ModelState, context, generic));
 
         await services.GetRequiredService<ProblemResponseWriter>().WriteAsync(http, fault, null, culture).ConfigureAwait(false);
     }
 
-    private static Dictionary<string, IReadOnlyList<string>> GetErrors(ModelStateDictionary modelState, string generic)
+    private Dictionary<string, IReadOnlyList<string>> GetErrors(ModelStateDictionary modelState, ActionContext context, string generic)
     {
+        var missingBody = context.HttpContext.RequestServices
+            .GetRequiredService<IOptions<MvcOptions>>().Value
+            .ModelBindingMessageProvider.MissingRequestBodyRequiredValueAccessor();
+        var bodyParameters = _isFromBinding || HasUnreadBody(modelState, missingBody)
+            ? GetBodyParameters(context)
+            : [];
+
         var errors = new Dictionary<string, List<string>>();
         foreach (var entry in modelState)
         {
-            if (entry.Value.Errors.Count == 0)
+            // A parameter name means nothing to the client: it only says that the body wasn't read.
+            if (bodyParameters.Contains(entry.Key))
             {
                 continue;
             }
 
             var field = GetField(entry.Key);
+
+            // An error about the whole body has no field to go with, and the detail text already covers it.
+            var failures = entry.Value.Errors
+                .Where(error => field.Length > 0 || !IsBodyFailure(entry.Key, error, missingBody))
+                .Select(error => GetMessage(entry.Key, error, generic))
+                .ToList();
+            if (failures.Count == 0)
+            {
+                continue;
+            }
+
             if (!errors.TryGetValue(field, out var messages))
             {
                 messages = [];
                 errors[field] = messages;
             }
 
-            messages.AddRange(entry.Value.Errors.Select(error => GetMessage(entry.Key, error, generic)));
+            messages.AddRange(failures);
         }
 
         return errors.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value);
+    }
+
+    private static bool HasUnreadBody(ModelStateDictionary modelState, string missingBody) =>
+        modelState.Any(entry => entry.Value?.Errors.Any(error => IsBodyFailure(entry.Key, error, missingBody)) == true);
+
+    private static bool IsBodyFailure(string key, ModelError error, string missingBody) =>
+        string.IsNullOrEmpty(error.ErrorMessage) || error.ErrorMessage == missingBody || IsParserMessage(key, error.ErrorMessage);
+
+    private static HashSet<string> GetBodyParameters(ActionContext context)
+    {
+        return new HashSet<string>(
+            context.ActionDescriptor.Parameters
+                .Where(parameter => parameter.BindingInfo?.BindingSource == BindingSource.Body)
+                .Select(parameter => parameter.BindingInfo?.BinderModelName ?? parameter.Name),
+            StringComparer.OrdinalIgnoreCase);
     }
 
     // A raw parser message can name .NET types, and an error with no text at all holds only an exception.

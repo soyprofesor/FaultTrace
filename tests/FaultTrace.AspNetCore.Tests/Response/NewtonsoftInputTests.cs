@@ -29,7 +29,8 @@ public class NewtonsoftInputTests
 
         problem.Status.ShouldBe(400);
         problem.Get("code").ShouldBe(FaultCodes.Validation);
-        var errors = problem.Json.GetProperty("errors").GetRawText();
+        var errors = problem.Has("errors") ? problem.Json.GetProperty("errors").GetRawText() : string.Empty;
+        errors.ShouldNotContain("request");
         errors.ShouldNotContain("Could not convert");
         errors.ShouldNotContain("Unexpected character");
         errors.ShouldNotContain("Unexpected end");
@@ -37,6 +38,18 @@ public class NewtonsoftInputTests
         errors.ShouldNotContain("line 1");
         errors.ShouldNotContain("Newtonsoft");
         errors.ShouldNotContain("System.");
+    }
+
+    [Fact]
+    public async Task UnreadBody_HasOnlyTheDetail()
+    {
+        using var app = await StartAsync();
+        using var content = new StringContent("not json", Encoding.UTF8, "application/json");
+
+        using var response = await app.Client.PostAsync("/api/newtonsoft", content);
+        var problem = await Problem.ReadAsync(response);
+
+        problem.Has("errors").ShouldBeFalse();
     }
 
     [Fact]
@@ -78,5 +91,5 @@ public class NewtonsoftOrderRequest
 public class NewtonsoftOrdersController : ControllerBase
 {
     [HttpPost]
-    public IActionResult Add([FromBody] NewtonsoftOrderRequest? request) => Ok();
+    public IActionResult Add([FromBody] NewtonsoftOrderRequest request) => Ok();
 }
