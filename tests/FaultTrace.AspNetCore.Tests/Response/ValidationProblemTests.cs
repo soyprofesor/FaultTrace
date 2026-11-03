@@ -219,7 +219,7 @@ public class ValidationProblemTests
         return await Problem.ReadAsync(response);
     }
 
-    private static StringContent Json(string json) => new StringContent(json, Encoding.UTF8, "application/json");
+    private static StringContent Json(string json) => new(json, Encoding.UTF8, "application/json");
 }
 
 public class OrderRequest

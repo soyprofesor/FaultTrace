@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 namespace FaultTrace.AspNetCore.Configuration;
 
 /// <summary>
-/// Settings for error responses. Everything except the culture texts can be reloaded without a restart.
+/// Settings for error responses. They reload without a restart, except the members marked as read once at startup.
 /// </summary>
 public sealed class FaultTraceAspNetCoreOptions
 {

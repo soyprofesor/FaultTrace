@@ -14,14 +14,14 @@ public class ProviderFaultDetailsTests
     {
         var origin = new FaultFrame("APP.ORDER_REQ", 1749);
         var entry = new FaultFrame("APP.ORDER_PACK", 775);
-        var segment = new FaultSegment("ORA-01400", "message", new[] { origin, entry });
+        var segment = new FaultSegment("ORA-01400", "message", [origin, entry]);
 
         var details = new ProviderFaultDetails(
             "Oracle",
             "ORA-01400",
             origin,
             entry,
-            new[] { segment },
+            [segment],
             new Dictionary<string, string> { ["column"] = "TREASURY_CODE" },
             "raw");
 
@@ -29,8 +29,8 @@ public class ProviderFaultDetailsTests
         details.NativeCode.ShouldBe("ORA-01400");
         details.Origin.ShouldBeSameAs(origin);
         details.Entry.ShouldBeSameAs(entry);
-        details.Chain.ShouldBe(new[] { segment });
-        details.Chain[0].Frames.ShouldBe(new[] { origin, entry });
+        details.Chain.ShouldBe([segment]);
+        details.Chain[0].Frames.ShouldBe([origin, entry]);
         details.Details["column"].ShouldBe("TREASURY_CODE");
         details.RawMessage.ShouldBe("raw");
     }
@@ -48,7 +48,7 @@ public class ProviderFaultDetailsTests
     [Fact]
     public void Constructor_CopiesCollections()
     {
-        var chain = new List<FaultSegment> { new FaultSegment("ORA-00001") };
+        var chain = new List<FaultSegment> { new("ORA-00001") };
         var values = new Dictionary<string, string> { ["table"] = "ORDERS" };
 
         var details = new ProviderFaultDetails("Oracle", chain: chain, details: values);

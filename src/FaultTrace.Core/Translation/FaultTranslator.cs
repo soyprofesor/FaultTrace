@@ -31,8 +31,8 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
         ILogger logger,
         IFaultRequestAccessor? requests = null)
     {
-        _providers = providers.ToArray();
-        _hooks = hooks.ToArray();
+        _providers = [.. providers];
+        _hooks = [.. hooks];
         _messages = messages;
         _logger = logger;
         _requests = requests;
@@ -178,7 +178,7 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
     }
 
     private static Fault CreateFallback() =>
-        new Fault(ErrorIdGenerator.NewId(), FaultCategory.Internal, FaultCodes.Unexpected, FallbackMessage, 500);
+        new(ErrorIdGenerator.NewId(), FaultCategory.Internal, FaultCodes.Unexpected, FallbackMessage, 500);
 
     private FaultRequest? GetRequest()
     {

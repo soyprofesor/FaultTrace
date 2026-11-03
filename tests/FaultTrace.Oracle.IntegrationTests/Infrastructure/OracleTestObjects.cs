@@ -275,7 +275,7 @@ internal static class OracleTestObjects
         """;
 
     public static readonly string[] Statements =
-    {
+    [
         "CREATE TABLE FAULTTRACE_TEST_PARENT (ID NUMBER CONSTRAINT FAULTTRACE_TEST_PARENT_PK PRIMARY KEY, NAME VARCHAR2(5) NOT NULL, AMOUNT NUMBER(3))",
         "CREATE TABLE FAULTTRACE_TEST_CHILD (ID NUMBER PRIMARY KEY, PARENT_ID NUMBER CONSTRAINT FAULTTRACE_TEST_CHILD_FK REFERENCES FAULTTRACE_TEST_PARENT (ID))",
         "CREATE TABLE FAULTTRACE_TEST_GUARDED (ID NUMBER)",
@@ -286,16 +286,16 @@ internal static class OracleTestObjects
         Normalize(PackSpec),
         Normalize(PackBody),
         Normalize(TriggerBody),
-    };
+    ];
 
     public static readonly string[] DropStatements =
-    {
+    [
         "DROP PACKAGE FAULTTRACE_TEST_PACK",
         "DROP PACKAGE FAULTTRACE_TEST_HELPER",
         "DROP TABLE FAULTTRACE_TEST_CHILD PURGE",
         "DROP TABLE FAULTTRACE_TEST_PARENT PURGE",
         "DROP TABLE FAULTTRACE_TEST_GUARDED PURGE",
-    };
+    ];
 
     public static Dictionary<string, int> FindLines()
     {
@@ -306,7 +306,7 @@ internal static class OracleTestObjects
             var marker = source[index].IndexOf("-- @", StringComparison.Ordinal);
             if (marker >= 0)
             {
-                lines[source[index].Substring(marker + 4).Trim()] = index + 1;
+                lines[source[index][(marker + 4)..].Trim()] = index + 1;
             }
         }
 

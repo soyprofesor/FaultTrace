@@ -98,7 +98,7 @@ public class CultureResolutionTests
             _ => throw new InvalidOperationException(),
             afterFaultTrace: pipeline => pipeline.Use((context, next) =>
             {
-                context.User = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("locale", "ru") }));
+                context.User = new ClaimsPrincipal(new ClaimsIdentity([new Claim("locale", "ru")]));
                 return next();
             }));
 
@@ -190,8 +190,8 @@ public class CultureResolutionTests
     {
         using var app = await StartAsync(options =>
         {
-            options.Culture.QueryNames = new List<string> { "language" };
-            options.Culture.HeaderNames = new List<string>();
+            options.Culture.QueryNames = ["language"];
+            options.Culture.HeaderNames = [];
         });
 
         (await TitleAsync(app, "/x?language=ru")).ShouldBe(Russian);
@@ -263,8 +263,8 @@ public class CultureResolutionTests
             afterFaultTrace: pipeline => pipeline.UseRequestLocalization(new RequestLocalizationOptions
             {
                 DefaultRequestCulture = new RequestCulture("ru"),
-                SupportedCultures = new List<CultureInfo> { new CultureInfo("ru") },
-                SupportedUICultures = new List<CultureInfo> { new CultureInfo("ru") },
+                SupportedCultures = [new("ru")],
+                SupportedUICultures = [new("ru")],
             }));
     }
 
@@ -272,9 +272,9 @@ public class CultureResolutionTests
     {
         var problem = await app.GetProblemAsync(url, request =>
         {
-            foreach (var header in headers)
+            foreach (var (name, value) in headers)
             {
-                request.Headers.TryAddWithoutValidation(header.Name, header.Value);
+                request.Headers.TryAddWithoutValidation(name, value);
             }
         });
 

@@ -6,9 +6,9 @@ namespace FaultTrace.Oracle.Parsing;
 
 internal sealed class ParsedOracleError
 {
-    public static readonly ParsedOracleError Empty = new ParsedOracleError();
+    public static readonly ParsedOracleError Empty = new();
 
-    public static readonly ParsedOracleError Failed = new ParsedOracleError(parseFailed: true);
+    public static readonly ParsedOracleError Failed = new(parseFailed: true);
 
     public ParsedOracleError(
         int? number = null,
@@ -25,7 +25,7 @@ internal sealed class ParsedOracleError
         BusinessMessage = businessMessage;
         Origin = origin;
         Entry = entry;
-        Chain = chain ?? Array.Empty<FaultSegment>();
+        Chain = chain ?? [];
         Details = details ?? new Dictionary<string, string>();
         ParseFailed = parseFailed;
     }

@@ -19,18 +19,18 @@ internal static class OracleErrorParser
 
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromMilliseconds(100);
 
-    private static readonly Regex SegmentPattern = new Regex(@"^ORA-(\d{5}):\s*(.*)$", Options, MatchTimeout);
+    private static readonly Regex SegmentPattern = new(@"^ORA-(\d{5}):\s*(.*)$", Options, MatchTimeout);
 
     // Matches: ORA-06512: at "APP.ORDER_PACK", line 775 and ORA-06512: at line 1
-    private static readonly Regex FramePattern = new Regex(@"^ORA-06512:[^""]*?(?:""([^""]+)""\D*)?(\d+)\s*$", Options, MatchTimeout);
+    private static readonly Regex FramePattern = new(@"^ORA-06512:[^""]*?(?:""([^""]+)""\D*)?(\d+)\s*$", Options, MatchTimeout);
 
-    private static readonly Regex HelpUrlPattern = new Regex(@"(?:Help:\s*)?https://docs\.oracle\.com/error-help/\S*", Options, MatchTimeout);
+    private static readonly Regex HelpUrlPattern = new(@"(?:Help:\s*)?https://docs\.oracle\.com/error-help/\S*", Options, MatchTimeout);
 
-    private static readonly Regex ColumnPattern = new Regex(@"""([^""]+)""\.""([^""]+)""\.""([^""]+)""", Options, MatchTimeout);
+    private static readonly Regex ColumnPattern = new(@"""([^""]+)""\.""([^""]+)""\.""([^""]+)""", Options, MatchTimeout);
 
-    private static readonly Regex ConstraintPattern = new Regex(@"\(([\w$#]+)\.([\w$#]+)\)", Options, MatchTimeout);
+    private static readonly Regex ConstraintPattern = new(@"\(([\w$#]+)\.([\w$#]+)\)", Options, MatchTimeout);
 
-    private static readonly Regex OracleCodePattern = new Regex(@"ORA-\d{5}:?\s*", Options, MatchTimeout);
+    private static readonly Regex OracleCodePattern = new(@"ORA-\d{5}:?\s*", Options, MatchTimeout);
 
     /// <summary>Parses a raw Oracle message. Never throws.</summary>
     public static ParsedOracleError Parse(string? message, IEnumerable<string>? ignoredPackages = null)
@@ -42,7 +42,7 @@ internal static class OracleErrorParser
 
         try
         {
-            return ParseCore(message, ignoredPackages?.ToArray() ?? Array.Empty<string>());
+            return ParseCore(message, ignoredPackages?.ToArray() ?? []);
         }
         catch (Exception)
         {
@@ -68,7 +68,7 @@ internal static class OracleErrorParser
             businessMessage,
             FindOrigin(segments, outerIndex, ignoredPackages),
             FindEntry(segments, outerIndex, ignoredPackages),
-            segments.Select(segment => segment.ToFaultSegment(ignoredPackages)).ToArray(),
+            [.. segments.Select(segment => segment.ToFaultSegment(ignoredPackages))],
             ReadDetails(segments));
     }
 
@@ -151,7 +151,7 @@ internal static class OracleErrorParser
         for (var i = segments.Count - 1; i >= 0; i--)
         {
             var frames = segments[i].Frames;
-            if (frames.Count > 0 && frames[frames.Count - 1].Unit == null)
+            if (frames.Count > 0 && frames[^1].Unit == null)
             {
                 return i;
             }
@@ -173,7 +173,7 @@ internal static class OracleErrorParser
 
         // ORA-04088 only says that the error above it came from a trigger. It's not an error of its own.
         var errors = segments.Where(segment => segment.Number != TriggerFailedNumber).ToList();
-        var originSegment = IsNewestFirst(errors, outerIndex) ? errors[errors.Count - 1] : errors[0];
+        var originSegment = IsNewestFirst(errors, outerIndex) ? errors[^1] : errors[0];
 
         return originSegment.Frames.FirstOrDefault(frame => IsVisible(frame, ignoredPackages))
             ?? segments.SelectMany(segment => segment.Frames).FirstOrDefault(frame => IsVisible(frame, ignoredPackages))
@@ -195,7 +195,7 @@ internal static class OracleErrorParser
             return false;
         }
 
-        return outerIndex == 0 || (IsBusiness(segments[0]) && !IsBusiness(segments[segments.Count - 1]));
+        return outerIndex == 0 || (IsBusiness(segments[0]) && !IsBusiness(segments[^1]));
     }
 
     private static bool IsBusiness(SegmentBuilder segment) =>
@@ -258,7 +258,7 @@ internal static class OracleErrorParser
 
         public string Text { get; set; }
 
-        public List<FaultFrame> Frames { get; } = new List<FaultFrame>();
+        public List<FaultFrame> Frames { get; } = [];
 
         public int? BacktraceStart { get; set; }
 
@@ -273,10 +273,10 @@ internal static class OracleErrorParser
             var firstAnonymous = Frames.FindIndex(frame => frame.Unit == null);
             return firstAnonymous >= 0 && firstAnonymous < Frames.Count - 1
                 ? Frames.Take(firstAnonymous)
-                : Enumerable.Empty<FaultFrame>();
+                : [];
         }
 
         public FaultSegment ToFaultSegment(string[] ignoredPackages) =>
-            new FaultSegment(NativeCode, Text, Frames.Where(frame => !IsIgnored(frame, ignoredPackages)));
+            new(NativeCode, Text, Frames.Where(frame => !IsIgnored(frame, ignoredPackages)));
     }
 }

@@ -276,7 +276,7 @@ public class FaultTraceMiddlewareTests
         {
             using var stream = await response.Content.ReadAsStreamAsync();
             int read;
-            while ((read = await stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((read = await stream.ReadAsync(buffer.AsMemory())) > 0)
             {
                 total.Write(buffer, 0, read);
             }

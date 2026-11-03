@@ -106,10 +106,12 @@ internal sealed class FaultTraceMiddleware
             if (context.Response.HasStarted)
             {
                 // A client that leaves during streaming is routine, not an error.
-                _logger.Log(
-                    fault.Category == FaultCategory.ClientClosed ? LogLevel.Information : LogLevel.Error,
-                    "Fault {ErrorId} happened after the response started, so the connection is aborted",
-                    fault.ErrorId);
+                var level = fault.Category == FaultCategory.ClientClosed ? LogLevel.Information : LogLevel.Error;
+                if (_logger.IsEnabled(level))
+                {
+                    _logger.Log(level, "Fault {ErrorId} happened after the response started, so the connection is aborted", fault.ErrorId);
+                }
+
                 context.Abort();
                 return;
             }
@@ -153,7 +155,7 @@ internal sealed class FaultTraceMiddleware
 
             var body = FallbackProblem.Create(errorId);
             context.Response.ContentLength = body.Length;
-            await context.Response.Body.WriteAsync(body, 0, body.Length, CancellationToken.None).ConfigureAwait(false);
+            await context.Response.Body.WriteAsync(body.AsMemory(), CancellationToken.None).ConfigureAwait(false);
         }
         catch (Exception fallbackFailure)
         {

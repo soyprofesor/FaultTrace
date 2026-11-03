@@ -21,7 +21,7 @@ public sealed class FaultSegment
     {
         NativeCode = Guard.NotEmpty(nativeCode, nameof(nativeCode));
         Message = message;
-        Frames = Array.AsReadOnly(frames?.ToArray() ?? Array.Empty<FaultFrame>());
+        Frames = Array.AsReadOnly(frames?.ToArray() ?? []);
     }
 
     /// <summary>The provider's own error code.</summary>

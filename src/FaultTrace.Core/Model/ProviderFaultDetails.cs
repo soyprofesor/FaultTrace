@@ -37,9 +37,9 @@ public sealed class ProviderFaultDetails
         NativeCode = nativeCode;
         Origin = origin;
         Entry = entry;
-        Chain = Array.AsReadOnly(chain?.ToArray() ?? Array.Empty<FaultSegment>());
+        Chain = Array.AsReadOnly(chain?.ToArray() ?? []);
         Details = new ReadOnlyDictionary<string, string>(
-            details?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new Dictionary<string, string>());
+            details?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? []);
         RawMessage = rawMessage;
         IsUnmapped = isUnmapped;
     }

@@ -19,8 +19,7 @@ public sealed class FaultTraceOptions
     internal Dictionary<string, string> Aliases { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    internal Dictionary<Type, Func<Exception, FaultProblem?>> ExceptionMappings { get; } =
-        new Dictionary<Type, Func<Exception, FaultProblem?>>();
+    internal Dictionary<Type, Func<Exception, FaultProblem?>> ExceptionMappings { get; } = [];
 
     internal Func<string, string, FaultMessage?>? MessageLookup { get; private set; }
 
@@ -38,7 +37,7 @@ public sealed class FaultTraceOptions
         var key = CultureNormalizer.Normalize(culture) ?? Guard.NotEmpty(culture, nameof(culture));
         if (!Messages.TryGetValue(key, out var messages))
         {
-            messages = new Dictionary<string, FaultMessage>();
+            messages = [];
             Messages[key] = messages;
         }
 
@@ -83,7 +82,7 @@ public sealed class FaultTraceOptions
         var key = CultureNormalizer.Normalize(culture) ?? Guard.NotEmpty(culture, nameof(culture));
         if (!Messages.ContainsKey(key))
         {
-            Messages[key] = new Dictionary<string, FaultMessage>();
+            Messages[key] = [];
         }
 
         return this;

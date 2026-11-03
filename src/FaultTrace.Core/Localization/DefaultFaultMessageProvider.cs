@@ -33,7 +33,7 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
         {
             if (!_messages.TryGetValue(culture.Key, out var target))
             {
-                target = new Dictionary<string, FaultMessage>();
+                target = [];
                 _messages[culture.Key] = target;
             }
 
@@ -48,6 +48,37 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
     }
 
     public string ResolveCulture(string? culture) => FindCulture(culture) ?? _defaultCulture;
+
+    public string? FindCulture(string? culture)
+    {
+        if (culture == null)
+        {
+            return null;
+        }
+
+        var key = culture.Replace('_', '-');
+        if (_aliases.TryGetValue(key, out var target))
+        {
+            key = target;
+        }
+
+        var builtIn = CultureNormalizer.Normalize(key);
+        if (builtIn != null)
+        {
+            return builtIn;
+        }
+
+        // The name as registered, never the client's spelling: a project's lookup may compare it.
+        foreach (var name in _messages.Keys)
+        {
+            if (string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return name;
+            }
+        }
+
+        return null;
+    }
 
     public FaultMessage Get(string code, string culture)
     {
@@ -84,36 +115,5 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
             _logger.LogError(failure, "FaultTrace message lookup failed for {Code} in {Culture}", code, culture);
             return null;
         }
-    }
-
-    public string? FindCulture(string? culture)
-    {
-        if (culture == null)
-        {
-            return null;
-        }
-
-        var key = culture.Replace('_', '-');
-        if (_aliases.TryGetValue(key, out var target))
-        {
-            key = target;
-        }
-
-        var builtIn = CultureNormalizer.Normalize(key);
-        if (builtIn != null)
-        {
-            return builtIn;
-        }
-
-        // The name as registered, never the client's spelling: a project's lookup may compare it.
-        foreach (var name in _messages.Keys)
-        {
-            if (string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
-            {
-                return name;
-            }
-        }
-
-        return null;
     }
 }

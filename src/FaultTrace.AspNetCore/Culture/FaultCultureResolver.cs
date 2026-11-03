@@ -16,11 +16,11 @@ internal sealed class FaultCultureResolver
     private const int MaxValueLength = 35;
     private const int MaxAcceptLanguageEntries = 16;
 
-    private static readonly List<string> DefaultQueryNames = new List<string> { "culture", "lang" };
-    private static readonly List<string> DefaultHeaderNames = new List<string> { "X-Culture", "X-Language" };
-    private static readonly List<string> DefaultRouteValueNames = new List<string> { "culture" };
-    private static readonly List<string> DefaultCookieNames = new List<string> { "culture" };
-    private static readonly List<string> DefaultClaimNames = new List<string> { "locale" };
+    private static readonly List<string> DefaultQueryNames = ["culture", "lang"];
+    private static readonly List<string> DefaultHeaderNames = ["X-Culture", "X-Language"];
+    private static readonly List<string> DefaultRouteValueNames = ["culture"];
+    private static readonly List<string> DefaultCookieNames = ["culture"];
+    private static readonly List<string> DefaultClaimNames = ["locale"];
 
     private readonly IFaultMessageProvider _messages;
     private readonly IOptionsMonitor<FaultTraceAspNetCoreOptions> _options;

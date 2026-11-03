@@ -18,7 +18,7 @@ namespace FaultTrace.Core.Tests.Translation;
 
 public class FaultTranslatorTests
 {
-    private readonly CapturingLogger _logger = new CapturingLogger();
+    private readonly CapturingLogger _logger = new();
 
     [Fact]
     public void Translate_UnknownException_IsGenericUnexpected()
@@ -39,12 +39,12 @@ public class FaultTranslatorTests
     [Fact]
     public void Translate_UsesTheFirstProviderThatRecognizesTheException()
     {
-        var fault = Create(providers: new IFaultProvider[]
-        {
+        var fault = Create(providers:
+        [
             new FakeProvider(context => null),
             new FakeProvider(context => Business(context, "first")),
             new FakeProvider(context => Business(context, "second")),
-        }).Translate(new InvalidOperationException());
+        ]).Translate(new InvalidOperationException());
 
         fault.UserMessage.ShouldBe("first");
     }
@@ -53,14 +53,14 @@ public class FaultTranslatorTests
     public void Translate_PassesResolvedCultureAndIdsToProvider()
     {
         FaultContext? seen = null;
-        var fault = Create(providers: new IFaultProvider[]
-        {
+        var fault = Create(providers:
+        [
             new FakeProvider(context =>
             {
                 seen = context;
                 return Business(context, "text");
             }),
-        }).Translate(new InvalidOperationException(), "uz-UZ");
+        ]).Translate(new InvalidOperationException(), "uz-UZ");
 
         seen!.Culture.ShouldBe("uz-Latn");
         seen.ErrorId.ShouldBe(fault.ErrorId);
@@ -69,11 +69,11 @@ public class FaultTranslatorTests
     [Fact]
     public void Translate_FailingProvider_IsLoggedAndTheNextOneIsUsed()
     {
-        var fault = Create(providers: new IFaultProvider[]
-        {
+        var fault = Create(providers:
+        [
             new FakeProvider(context => throw new InvalidOperationException("provider failure")),
             new FakeProvider(context => Business(context, "second")),
-        }).Translate(new InvalidOperationException());
+        ]).Translate(new InvalidOperationException());
 
         fault.UserMessage.ShouldBe("second");
         _logger.Entries.ShouldContain(entry => entry.Exception.Message == "provider failure" && entry.Level == LogLevel.Error);
@@ -82,10 +82,10 @@ public class FaultTranslatorTests
     [Fact]
     public void Translate_FailingProviderAlone_GivesUnexpected()
     {
-        var fault = Create(providers: new IFaultProvider[]
-        {
+        var fault = Create(providers:
+        [
             new FakeProvider(context => throw new InvalidOperationException("provider failure")),
-        }).Translate(new ArgumentException());
+        ]).Translate(new ArgumentException());
 
         fault.Code.ShouldBe(FaultCodes.Unexpected);
     }
@@ -94,8 +94,8 @@ public class FaultTranslatorTests
     public void Translate_FailingMessageProvider_GivesHardCodedFallback()
     {
         var translator = new FaultTranslator(
-            Array.Empty<IFaultProvider>(),
-            Array.Empty<IFaultHook>(),
+            [],
+            [],
             new BrokenMessageProvider(),
             _logger);
 
@@ -165,14 +165,14 @@ public class FaultTranslatorTests
             "ORA-01400",
             new FaultFrame("APP.ORDER_REQ", 1749),
             new FaultFrame("APP.ORDER_PACK", 775),
-            new[] { new FaultSegment("ORA-01400", "text", new[] { new FaultFrame("APP.ORDER_REQ", 1749), new FaultFrame(null, 1) }) },
+            [new FaultSegment("ORA-01400", "text", [new FaultFrame("APP.ORDER_REQ", 1749), new FaultFrame(null, 1)])],
             new Dictionary<string, string> { ["column"] = "CODE" },
             "raw");
 
-        var fault = Create(providers: new IFaultProvider[]
-        {
+        var fault = Create(providers:
+        [
             new FakeProvider(context => new Fault(context.ErrorId, FaultCategory.Validation, FaultCodes.RequiredField, "text", 400, provider: details)),
-        }).Translate(exception, "ru");
+        ]).Translate(exception, "ru");
 
         var entry = _logger.Entries.Single();
         entry.Exception.ShouldBeSameAs(exception);
@@ -186,14 +186,14 @@ public class FaultTranslatorTests
         entry.Properties["RawMessage"].ShouldBe("raw");
         entry.Properties["Culture"].ShouldBe("ru");
         entry.Properties["Unmapped"].ShouldBe(false);
-        ((string[])entry.Properties["Chain"]).ShouldBe(new[] { "ORA-01400 [APP.ORDER_REQ:1749 > anonymous:1]" });
+        ((string[])entry.Properties["Chain"]).ShouldBe(["ORA-01400 [APP.ORDER_REQ:1749 > anonymous:1]"]);
     }
 
     [Fact]
     public void Translate_LogsUnmappedMarker()
     {
-        Create(providers: new IFaultProvider[]
-        {
+        Create(providers:
+        [
             new FakeProvider(context => new Fault(
                 context.ErrorId,
                 FaultCategory.Internal,
@@ -201,7 +201,7 @@ public class FaultTranslatorTests
                 "text",
                 500,
                 provider: new ProviderFaultDetails("Oracle", isUnmapped: true))),
-        }).Translate(new InvalidOperationException());
+        ]).Translate(new InvalidOperationException());
 
         _logger.Entries.Single().Properties["Unmapped"].ShouldBe(true);
     }
@@ -253,7 +253,7 @@ public class FaultTranslatorTests
     public void Translate_RunsHooksOnce()
     {
         var hook = new FakeHook();
-        var translator = Create(hooks: new IFaultHook[] { hook });
+        var translator = Create(hooks: [hook]);
         var exception = new InvalidOperationException();
 
         var fault = translator.Translate(exception);
@@ -266,7 +266,7 @@ public class FaultTranslatorTests
     public void Translate_FailingHook_IsLoggedAndOthersStillRun()
     {
         var hook = new FakeHook();
-        var fault = Create(hooks: new IFaultHook[] { new FakeHook(new InvalidOperationException("hook failure")), hook })
+        var fault = Create(hooks: [new FakeHook(new InvalidOperationException("hook failure")), hook])
             .Translate(new InvalidOperationException());
 
         fault.Code.ShouldBe(FaultCodes.Unexpected);
@@ -297,7 +297,7 @@ public class FaultTranslatorTests
     [Fact]
     public void Translate_ProviderWinsOverTheTimeoutRule()
     {
-        var fault = Create(providers: new IFaultProvider[] { new FakeProvider(context => Business(context, "first")) })
+        var fault = Create(providers: [new FakeProvider(context => Business(context, "first"))])
             .Translate(new TimeoutException());
 
         fault.Code.ShouldBe(FaultCodes.Business);
@@ -319,7 +319,7 @@ public class FaultTranslatorTests
         var provider = new FakeProvider(context =>
             new Fault(context.ErrorId, FaultCategory.Timeout, FaultCodes.Timeout, "text", 504, isTransient: true, context.TraceId, provider: details));
 
-        var fault = Create(new IFaultProvider[] { provider }, requests: new FakeRequests(() => new FaultRequest(null, null, null, "trace", isAborted: true)))
+        var fault = Create([provider], requests: new FakeRequests(() => new FaultRequest(null, null, null, "trace", isAborted: true)))
             .Translate(new InvalidOperationException(), "ru");
 
         fault.Category.ShouldBe(FaultCategory.ClientClosed);
@@ -374,7 +374,7 @@ public class FaultTranslatorTests
     {
         var hook = new FakeHook();
 
-        var fault = Create(hooks: new IFaultHook[] { hook }).Create(FaultCategory.NotFound, FaultCodes.NotFound, 404, "ru");
+        var fault = Create(hooks: [hook]).Create(FaultCategory.NotFound, FaultCodes.NotFound, 404, "ru");
 
         fault.Status.ShouldBe(404);
         fault.Code.ShouldBe(FaultCodes.NotFound);
@@ -388,11 +388,11 @@ public class FaultTranslatorTests
     [Fact]
     public void FactoryFault_KeepsValidationErrors()
     {
-        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = new[] { "Required" } };
+        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = ["Required"] };
 
         var fault = Create().Create(FaultCategory.Validation, FaultCodes.Validation, 400, errors: errors);
 
-        fault.Errors!["amount"].ShouldBe(new[] { "Required" });
+        fault.Errors!["amount"].ShouldBe(["Required"]);
         _logger.Entries[0].Level.ShouldBe(LogLevel.Warning);
     }
 
@@ -425,15 +425,15 @@ public class FaultTranslatorTests
     private FaultTranslator Create(IFaultProvider[]? providers = null, IFaultHook[]? hooks = null, IFaultRequestAccessor? requests = null)
     {
         return new FaultTranslator(
-            providers ?? Array.Empty<IFaultProvider>(),
-            hooks ?? Array.Empty<IFaultHook>(),
+            providers ?? [],
+            hooks ?? [],
             new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(new FaultTraceOptions())),
             _logger,
             requests);
     }
 
     private static Fault Business(FaultContext context, string text) =>
-        new Fault(context.ErrorId, FaultCategory.Business, FaultCodes.Business, text, 400, traceId: context.TraceId);
+        new(context.ErrorId, FaultCategory.Business, FaultCodes.Business, text, 400, traceId: context.TraceId);
 
     private sealed class FakeProvider : IFaultProvider
     {
@@ -456,7 +456,7 @@ public class FaultTranslatorTests
             _failure = failure;
         }
 
-        public List<(Fault Fault, Exception? Exception)> Calls { get; } = new List<(Fault, Exception?)>();
+        public List<(Fault Fault, Exception? Exception)> Calls { get; } = [];
 
         public void OnFault(Fault fault, Exception? exception)
         {

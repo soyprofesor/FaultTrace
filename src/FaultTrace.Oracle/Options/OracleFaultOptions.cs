@@ -15,7 +15,7 @@ public sealed class OracleFaultOptions
     /// Packages hidden from the origin and the chain, for example a project's error helper. The raw message stays complete.
     /// A name can be <c>ERROR_PACK</c> or <c>CORE.ERROR_PACK</c>.
     /// </summary>
-    public ICollection<string> IgnoredPackages { get; } = new List<string>();
+    public ICollection<string> IgnoredPackages { get; } = [];
 
     internal Dictionary<string, Dictionary<string, string>> Columns { get; } =
         new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
@@ -23,9 +23,9 @@ public sealed class OracleFaultOptions
     internal Dictionary<string, Dictionary<string, string>> Constraints { get; } =
         new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
-    internal Dictionary<int, OracleClassification> CodeOverrides { get; } = new Dictionary<int, OracleClassification>();
+    internal Dictionary<int, OracleClassification> CodeOverrides { get; } = [];
 
-    internal List<OracleFaultRule> Rules { get; } = new List<OracleFaultRule>();
+    internal List<OracleFaultRule> Rules { get; } = [];
 
     /// <summary>
     /// Sets the friendly name of a column, used by the <c>required_field</c> and <c>value_too_long</c> messages.

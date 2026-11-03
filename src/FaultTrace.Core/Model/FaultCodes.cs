@@ -69,28 +69,18 @@ public static class FaultCodes
     /// <returns>The code.</returns>
     public static string ForCategory(FaultCategory category)
     {
-        switch (category)
+        return category switch
         {
-            case FaultCategory.Business:
-                return Business;
-            case FaultCategory.Conflict:
-                return Conflict;
-            case FaultCategory.Validation:
-                return Validation;
-            case FaultCategory.Unauthorized:
-                return Unauthorized;
-            case FaultCategory.Forbidden:
-                return Forbidden;
-            case FaultCategory.NotFound:
-                return NotFound;
-            case FaultCategory.Transient:
-                return Unavailable;
-            case FaultCategory.Timeout:
-                return Timeout;
-            case FaultCategory.ClientClosed:
-                return ClientClosed;
-            default:
-                return Unexpected;
-        }
+            FaultCategory.Business => Business,
+            FaultCategory.Conflict => Conflict,
+            FaultCategory.Validation => Validation,
+            FaultCategory.Unauthorized => Unauthorized,
+            FaultCategory.Forbidden => Forbidden,
+            FaultCategory.NotFound => NotFound,
+            FaultCategory.Transient => Unavailable,
+            FaultCategory.Timeout => Timeout,
+            FaultCategory.ClientClosed => ClientClosed,
+            _ => Unexpected,
+        };
     }
 }

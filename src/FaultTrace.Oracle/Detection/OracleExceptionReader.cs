@@ -12,8 +12,7 @@ internal static class OracleExceptionReader
     private const string OracleExceptionTypeName = "Oracle.ManagedDataAccess.Client.OracleException";
     private const int MaxDepth = 16;
 
-    private static readonly ConcurrentDictionary<(Type Type, string Name), PropertyInfo?> Properties =
-        new ConcurrentDictionary<(Type Type, string Name), PropertyInfo?>();
+    private static readonly ConcurrentDictionary<(Type Type, string Name), PropertyInfo?> Properties = new();
 
     /// <summary>Finds an Oracle exception in the exception or its inner exceptions. Never throws.</summary>
     public static OracleExceptionInfo? Find(Exception? exception) => Find(exception, 0);
@@ -107,11 +106,11 @@ internal static class OracleExceptionReader
         }
 
         var lines = new List<string>();
-        foreach (var error in errors)
+        foreach (var (_, text) in errors)
         {
-            if (!string.IsNullOrEmpty(error.Message))
+            if (!string.IsNullOrEmpty(text))
             {
-                lines.Add(error.Message!);
+                lines.Add(text!);
             }
         }
 

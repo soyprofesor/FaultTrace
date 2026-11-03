@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace FaultTrace.AspNetCore.Handling;
 
-// Every error status can come back without a body: from the framework, an auth handler, a rate limiter or a plain StatusCode(500).
+// Maps an error status without a body to its fault. Such a response can come from the framework, an auth handler or the application.
 internal static class EmptyStatusFaults
 {
     // Same test as the framework's status code pages. A content type means the response belongs to someone else.

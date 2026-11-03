@@ -8,6 +8,8 @@ using FaultTrace.Oracle.Classification;
 using FaultTrace.Oracle.Detection;
 using FaultTrace.Oracle.Options;
 using FaultTrace.Oracle.Parsing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace FaultTrace.Oracle;
@@ -18,11 +20,13 @@ internal sealed class OracleFaultTranslator : IFaultProvider
 
     private readonly IFaultMessageProvider _messages;
     private readonly OracleFaultOptions _options;
+    private readonly ILogger _logger;
 
-    public OracleFaultTranslator(IFaultMessageProvider messages, IOptions<OracleFaultOptions> options)
+    public OracleFaultTranslator(IFaultMessageProvider messages, IOptions<OracleFaultOptions> options, ILoggerFactory? loggerFactory = null)
     {
         _messages = messages;
         _options = options.Value;
+        _logger = loggerFactory?.CreateLogger("FaultTrace") ?? NullLogger.Instance;
     }
 
     public Fault? TryTranslate(Exception exception, FaultContext context)
@@ -34,6 +38,11 @@ internal sealed class OracleFaultTranslator : IFaultProvider
         }
 
         var parsed = OracleErrorParser.Parse(error.Message, _options.IgnoredPackages);
+        if (parsed.ParseFailed)
+        {
+            _logger.LogWarning("FaultTrace could not parse an Oracle message, so fault {ErrorId} has no stack details", context.ErrorId);
+        }
+
         var number = error.Number > 0 ? error.Number : parsed.Number;
         var nativeCode = number.HasValue
             ? "ORA-" + number.Value.ToString("D5", CultureInfo.InvariantCulture)
@@ -86,9 +95,10 @@ internal sealed class OracleFaultTranslator : IFaultProvider
                     return rule;
                 }
             }
-            catch (Exception)
+            catch (Exception failure)
             {
                 // A broken project rule must not change how the error is handled: it counts as no match.
+                _logger.LogError(failure, "FaultTrace Oracle rule failed for error {Number}", number);
             }
         }
 
@@ -130,8 +140,11 @@ internal sealed class OracleFaultTranslator : IFaultProvider
         return message.Detail;
     }
 
-    private static bool TryGetForCulture(Dictionary<string, string> values, string culture, out string value)
+    // The same fallback as library-generated texts: requested culture, default culture, English.
+    private bool TryGetForCulture(Dictionary<string, string> values, string culture, out string value)
     {
-        return values.TryGetValue(culture, out value!) || values.TryGetValue(CultureNormalizer.English, out value!);
+        return values.TryGetValue(culture, out value!)
+            || values.TryGetValue(_messages.ResolveCulture(null), out value!)
+            || values.TryGetValue(CultureNormalizer.English, out value!);
     }
 }

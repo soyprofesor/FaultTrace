@@ -7,7 +7,7 @@ namespace FaultTrace.Core.Tests.Translation;
 
 internal sealed class CapturingLogger : ILogger
 {
-    public List<Entry> Entries { get; } = new List<Entry>();
+    public List<Entry> Entries { get; } = [];
 
     public bool ThrowOnLog { get; set; }
 
@@ -26,7 +26,7 @@ internal sealed class CapturingLogger : ILogger
         Entries.Add(new Entry(
             logLevel,
             exception,
-            properties?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new Dictionary<string, object>()));
+            properties?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? []));
     }
 
     internal sealed class Entry

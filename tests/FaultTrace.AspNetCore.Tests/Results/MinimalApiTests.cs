@@ -169,7 +169,7 @@ public class MinimalApiTests
     {
         using var app = await StartAsync(endpoints => endpoints.MapPost(
             "/orders",
-            () => HttpResults.ValidationProblem(new System.Collections.Generic.Dictionary<string, string[]> { ["name"] = new[] { "Required" } })));
+            () => HttpResults.ValidationProblem(new System.Collections.Generic.Dictionary<string, string[]> { ["name"] = ["Required"] })));
 
         (await PostAsync(app)).Has("errorId").ShouldBeFalse();
     }
@@ -192,6 +192,6 @@ public class MinimalApiTests
         return await Problem.ReadAsync(response);
     }
 
-    private static StringContent Json() => new StringContent("{\"name\":\"a\"}", Encoding.UTF8, "application/json");
+    private static StringContent Json() => new("{\"name\":\"a\"}", Encoding.UTF8, "application/json");
 }
 #endif

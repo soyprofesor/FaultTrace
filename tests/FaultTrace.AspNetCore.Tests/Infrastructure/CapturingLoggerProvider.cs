@@ -8,11 +8,11 @@ namespace FaultTrace.AspNetCore.Tests.Infrastructure;
 
 internal sealed class CapturingLoggerProvider : ILoggerProvider
 {
-    private readonly ConcurrentQueue<LogEntry> _entries = new ConcurrentQueue<LogEntry>();
+    private readonly ConcurrentQueue<LogEntry> _entries = new();
 
-    public IReadOnlyList<LogEntry> FaultTraceEntries => _entries.Where(entry => entry.Category == "FaultTrace").ToArray();
+    public IReadOnlyList<LogEntry> FaultTraceEntries => [.. _entries.Where(entry => entry.Category == "FaultTrace")];
 
-    public IReadOnlyList<LogEntry> Faults => FaultTraceEntries.Where(entry => entry.Properties.ContainsKey("Code")).ToArray();
+    public IReadOnlyList<LogEntry> Faults => [.. FaultTraceEntries.Where(entry => entry.Properties.ContainsKey("Code"))];
 
     public ILogger CreateLogger(string categoryName) => new Logger(categoryName, _entries);
 
@@ -48,7 +48,7 @@ internal sealed class CapturingLoggerProvider : ILoggerProvider
                 logLevel,
                 exception,
                 formatter(state, exception),
-                properties?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? new Dictionary<string, object?>()));
+                properties?.ToDictionary(pair => pair.Key, pair => pair.Value) ?? []));
         }
 
         private sealed class Scope : IDisposable

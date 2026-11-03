@@ -21,7 +21,7 @@ public class OracleSessionTests
     [OracleFact]
     public void RussianSession_GivesTheSameResult()
     {
-        var fault = _database.Call("REQUIRED_INSERT", prepare: Russian);
+        var fault = OracleTestDatabase.Call("REQUIRED_INSERT", prepare: Russian);
 
         fault.Code.ShouldBe(FaultCodes.RequiredField);
         fault.Provider!.NativeCode.ShouldBe("ORA-01400");
@@ -33,7 +33,7 @@ public class OracleSessionTests
     [OracleFact]
     public void RussianSession_FindsTheConstraint()
     {
-        var fault = _database.Call("DUPLICATE", prepare: Russian);
+        var fault = OracleTestDatabase.Call("DUPLICATE", prepare: Russian);
 
         fault.Code.ShouldBe(FaultCodes.Duplicate);
         fault.Provider!.Details["constraint"].ShouldBe("FAULTTRACE_TEST_PARENT_PK");
@@ -42,7 +42,7 @@ public class OracleSessionTests
     [OracleFact]
     public void CommandTimeout_IsATimeout()
     {
-        var fault = _database.Fails(OracleTestObjects.Pack + ".SLOW", CommandType.StoredProcedure, commandTimeout: 1);
+        var fault = OracleTestDatabase.Fails(OracleTestObjects.Pack + ".SLOW", CommandType.StoredProcedure, commandTimeout: 1);
 
         fault.Code.ShouldBe(FaultCodes.Timeout);
         fault.Status.ShouldBe(504);

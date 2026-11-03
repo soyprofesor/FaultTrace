@@ -8,7 +8,7 @@ internal static class OracleErrorClassifier
 {
     private static readonly OracleClassification Business = Mapped(FaultCategory.Business, FaultCodes.Business, 400);
     private static readonly OracleClassification Unavailable = Mapped(FaultCategory.Transient, FaultCodes.Unavailable, 503, isTransient: true);
-    private static readonly OracleClassification Unmapped = new OracleClassification(FaultCategory.Internal, FaultCodes.Unexpected, 500, isTransient: false, isMapped: false);
+    private static readonly OracleClassification Unmapped = new(FaultCategory.Internal, FaultCodes.Unexpected, 500, isTransient: false, isMapped: false);
 
     private static readonly Dictionary<int, OracleClassification> ExactCodes = BuildExactCodes();
 
@@ -62,5 +62,5 @@ internal static class OracleErrorClassifier
     }
 
     private static OracleClassification Mapped(FaultCategory category, string code, int status, bool isTransient = false) =>
-        new OracleClassification(category, code, status, isTransient, isMapped: true);
+        new(category, code, status, isTransient, isMapped: true);
 }

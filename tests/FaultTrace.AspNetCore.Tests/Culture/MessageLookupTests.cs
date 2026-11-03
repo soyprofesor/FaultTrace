@@ -15,7 +15,7 @@ namespace FaultTrace.AspNetCore.Tests.Culture;
 public class MessageLookupTests
 {
     private static readonly ResourceManager Resources =
-        new ResourceManager("FaultTrace.AspNetCore.Tests.Culture.TestMessages", typeof(MessageLookupTests).Assembly);
+        new("FaultTrace.AspNetCore.Tests.Culture.TestMessages", typeof(MessageLookupTests).Assembly);
 
     [Fact]
     public async Task ResourceFile_GivesTheTextsInTheRequestedCulture()

@@ -73,7 +73,7 @@ public class ProjectExceptionTests
     [Fact]
     public async Task ExceptionWithErrors_ShowsThem()
     {
-        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = new[] { "Too large" } };
+        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = ["Too large"] };
         using var app = await TestApp.ThrowingAsync(new OrderException(400, "limits", "Check the limits", errors));
 
         var problem = await app.GetProblemAsync();
@@ -171,7 +171,7 @@ public class ProjectExceptionTests
             .GetConstructors(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
             .Single(candidate => candidate.GetParameters().Length == 3);
         var reason = Activator.CreateInstance(constructor.GetParameters()[2].ParameterType);
-        return (Exception)constructor.Invoke(new[] { "rejected", status, reason });
+        return (Exception)constructor.Invoke(["rejected", status, reason]);
 #else
         return new BadHttpRequestException("rejected", status);
 #endif

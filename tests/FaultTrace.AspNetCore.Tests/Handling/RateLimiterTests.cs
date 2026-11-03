@@ -17,7 +17,7 @@ using Xunit;
 
 namespace FaultTrace.AspNetCore.Tests.Handling;
 
-// The real framework middleware, because what a rejection looks like is decided by the framework, not by these tests.
+// Runs the framework's own rate limiter, which decides what a rejected response looks like.
 public class RateLimiterTests
 {
     [Fact]

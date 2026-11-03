@@ -5,7 +5,6 @@ namespace FaultTrace.Core.Abstractions;
 
 /// <summary>
 /// Implement this on a project's own exception, and it is picked up automatically.
-/// It has no effect on any other type: only exceptions are ever translated.
 /// </summary>
 public interface IFaultException
 {

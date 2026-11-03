@@ -29,7 +29,25 @@ csharp_new_line_before_open_brace = all
 csharp_prefer_braces = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_using_directive_placement = outside_namespace:suggestion
+# Explicit constructors keep fields readonly and give public parameters their own XML docs.
+csharp_style_prefer_primary_constructors = false:silent
 dotnet_sort_system_directives_first = true
+
+dotnet_naming_rule.private_constants_are_pascal.severity = suggestion
+dotnet_naming_rule.private_constants_are_pascal.symbols = private_constants
+dotnet_naming_rule.private_constants_are_pascal.style = pascal
+dotnet_naming_symbols.private_constants.applicable_kinds = field
+dotnet_naming_symbols.private_constants.applicable_accessibilities = private
+dotnet_naming_symbols.private_constants.required_modifiers = const
+
+dotnet_naming_rule.private_static_readonly_are_pascal.severity = suggestion
+dotnet_naming_rule.private_static_readonly_are_pascal.symbols = private_static_readonly
+dotnet_naming_rule.private_static_readonly_are_pascal.style = pascal
+dotnet_naming_symbols.private_static_readonly.applicable_kinds = field
+dotnet_naming_symbols.private_static_readonly.applicable_accessibilities = private
+dotnet_naming_symbols.private_static_readonly.required_modifiers = static, readonly
+
+dotnet_naming_style.pascal.capitalization = pascal_case
 
 dotnet_naming_rule.private_fields_are_camel_prefixed.severity = suggestion
 dotnet_naming_rule.private_fields_are_camel_prefixed.symbols = private_fields
@@ -38,3 +56,18 @@ dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+# Not available on every target framework.
+dotnet_diagnostic.CA1510.severity = none
+
+[tests/**.cs]
+# A route parameter can exist only for the library to read, not for the test handler.
+dotnet_diagnostic.ASP0018.severity = none
+# Clarity over allocation in tests, and action parameters exist for the framework to bind.
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1861.severity = none
+dotnet_diagnostic.IDE0060.severity = none
+
+# Must have the full name of the ODP.NET type, whatever folder it is in.
+[tests/**/FakeOracleException.cs]
+dotnet_diagnostic.IDE0130.severity = none

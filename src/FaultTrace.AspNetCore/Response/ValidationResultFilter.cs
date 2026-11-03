@@ -9,7 +9,7 @@ internal sealed class ValidationResultFilter : IAlwaysRunResultFilter
 {
     public void OnResultExecuting(ResultExecutingContext context)
     {
-        if (!(context.Result is ObjectResult result))
+        if (context.Result is not ObjectResult result)
         {
             return;
         }

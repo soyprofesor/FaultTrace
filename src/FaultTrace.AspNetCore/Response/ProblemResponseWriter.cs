@@ -73,7 +73,7 @@ internal sealed class ProblemResponseWriter
         }
 
         // The request may already be aborted, and that token must not stop the response.
-        await response.Body.WriteAsync(body, 0, body.Length, CancellationToken.None).ConfigureAwait(false);
+        await response.Body.WriteAsync(body.AsMemory(), CancellationToken.None).ConfigureAwait(false);
     }
 
     // A project's own code usually has no texts, and the generic "unexpected" title would be wrong for it.

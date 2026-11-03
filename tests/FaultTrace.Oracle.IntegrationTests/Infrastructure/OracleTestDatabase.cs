@@ -58,7 +58,7 @@ public sealed class OracleTestDatabase : IDisposable
 
     public string Frame(string marker) => Pack + ":" + _lines[marker];
 
-    public Fault Call(string procedure, Action<OracleFaultOptions>? configure = null, string? culture = null, Action<OracleConnection>? prepare = null)
+    public static Fault Call(string procedure, Action<OracleFaultOptions>? configure = null, string? culture = null, Action<OracleConnection>? prepare = null)
     {
         return Fails(
             OracleTestObjects.Pack + "." + procedure,
@@ -68,7 +68,7 @@ public sealed class OracleTestDatabase : IDisposable
             prepare);
     }
 
-    public Fault Fails(
+    public static Fault Fails(
         string text,
         CommandType type = CommandType.Text,
         Action<OracleFaultOptions>? configure = null,
@@ -80,7 +80,7 @@ public sealed class OracleTestDatabase : IDisposable
         return Translator(configure).Translate(exception, culture);
     }
 
-    public OracleException Catch(string text, CommandType type = CommandType.Text, Action<OracleConnection>? prepare = null, int? commandTimeout = null)
+    public static OracleException Catch(string text, CommandType type = CommandType.Text, Action<OracleConnection>? prepare = null, int? commandTimeout = null)
     {
         using var connection = new OracleConnection(ConnectionString);
         connection.Open();
@@ -115,7 +115,7 @@ public sealed class OracleTestDatabase : IDisposable
         return services.BuildServiceProvider().GetRequiredService<IFaultTranslator>();
     }
 
-    public void Execute(string text)
+    public static void Execute(string text)
     {
         using var connection = new OracleConnection(ConnectionString);
         connection.Open();
@@ -132,7 +132,7 @@ public sealed class OracleTestDatabase : IDisposable
         }
     }
 
-    private object Scalar(string text)
+    private static object Scalar(string text)
     {
         using var connection = new OracleConnection(ConnectionString);
         connection.Open();
@@ -141,7 +141,7 @@ public sealed class OracleTestDatabase : IDisposable
         return command.ExecuteScalar();
     }
 
-    private void Drop()
+    private static void Drop()
     {
         foreach (var statement in OracleTestObjects.DropStatements)
         {

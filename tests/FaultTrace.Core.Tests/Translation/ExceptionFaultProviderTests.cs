@@ -12,8 +12,8 @@ namespace FaultTrace.Core.Tests.Translation;
 
 public class ExceptionFaultProviderTests
 {
-    private readonly CapturingLogger _logger = new CapturingLogger();
-    private readonly FaultTraceOptions _options = new FaultTraceOptions();
+    private readonly CapturingLogger _logger = new();
+    private readonly FaultTraceOptions _options = new();
 
     [Theory]
     [InlineData(400, FaultCategory.Business)]
@@ -51,12 +51,12 @@ public class ExceptionFaultProviderTests
     [Fact]
     public void Errors_MakeItAValidationFault()
     {
-        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = new[] { "Too large" } };
+        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = ["Too large"] };
 
         var fault = Translate(new ProjectException(404, "own", "Check it", errors));
 
         fault!.Category.ShouldBe(FaultCategory.Validation);
-        fault.Errors!["amount"].ShouldBe(new[] { "Too large" });
+        fault.Errors!["amount"].ShouldBe(["Too large"]);
     }
 
     [Fact]

@@ -31,12 +31,12 @@ public class OracleErrorParserTests
         parsed.Origin!.ToString().ShouldBe("APP.ORDER_REQ:1749");
         parsed.Entry!.ToString().ShouldBe("APP.ORDER_PACK:775");
         parsed.Chain.Count.ShouldBe(1);
-        parsed.Chain[0].Frames.Select(frame => frame.ToString()).ShouldBe(new[]
-        {
+        parsed.Chain[0].Frames.Select(frame => frame.ToString()).ShouldBe(
+        [
             "APP.ORDER_REQ:1749",
             "APP.ORDER_PACK:775",
             "anonymous:1",
-        });
+        ]);
         parsed.Details[OracleDetailKeys.Schema].ShouldBe("APP");
         parsed.Details[OracleDetailKeys.Table].ShouldBe("ORDERS");
         parsed.Details[OracleDetailKeys.Column].ShouldBe("TREASURY_CODE");
@@ -107,7 +107,7 @@ public class OracleErrorParserTests
 
         parsed.Number.ShouldBe(20005);
         parsed.BusinessMessage.ShouldBe("Could not save the order");
-        parsed.Chain.Select(segment => segment.NativeCode).ShouldBe(new[] { "ORA-20005", "ORA-01400" });
+        parsed.Chain.Select(segment => segment.NativeCode).ShouldBe(["ORA-20005", "ORA-01400"]);
         parsed.Origin!.ToString().ShouldBe("APP.ORDER_REQ:1749");
         parsed.Entry!.ToString().ShouldBe(expectedEntry);
         parsed.Details[OracleDetailKeys.Column].ShouldBe("TREASURY_CODE");
@@ -126,22 +126,22 @@ public class OracleErrorParserTests
     [InlineData("core.error_pack")]
     public void ErrorPackHelper_IgnoredPackage_IsHiddenFromOriginAndChain(string ignored)
     {
-        var parsed = OracleErrorParser.Parse(Fixture("error-pack-helper.txt"), new[] { ignored });
+        var parsed = OracleErrorParser.Parse(Fixture("error-pack-helper.txt"), [ignored]);
 
         parsed.BusinessMessage.ShouldBe("Customer is blocked");
         parsed.Origin!.ToString().ShouldBe("APP.ORDER_PACK:300");
         parsed.Entry!.ToString().ShouldBe("APP.ORDER_PACK:300");
-        parsed.Chain[0].Frames.Select(frame => frame.ToString()).ShouldBe(new[]
-        {
+        parsed.Chain[0].Frames.Select(frame => frame.ToString()).ShouldBe(
+        [
             "APP.ORDER_PACK:300",
             "anonymous:1",
-        });
+        ]);
     }
 
     [Fact]
     public void IgnoredPackage_MatchesWholeNamesOnly()
     {
-        var parsed = OracleErrorParser.Parse(Fixture("error-pack-helper.txt"), new[] { "PACK" });
+        var parsed = OracleErrorParser.Parse(Fixture("error-pack-helper.txt"), ["PACK"]);
 
         parsed.Origin!.ToString().ShouldBe("CORE.ERROR_PACK:15");
     }
@@ -173,7 +173,7 @@ public class OracleErrorParserTests
         parsed.Number.ShouldBe(1400);
         parsed.Origin!.ToString().ShouldBe("APP.ORDER_REQ:1749");
         parsed.Entry!.ToString().ShouldBe("APP.ORDER_PACK:775");
-        parsed.Chain[0].Frames.Last().Unit.ShouldBeNull();
+        parsed.Chain[0].Frames[^1].Unit.ShouldBeNull();
         parsed.Details[OracleDetailKeys.Column].ShouldBe("TREASURY_CODE");
     }
 

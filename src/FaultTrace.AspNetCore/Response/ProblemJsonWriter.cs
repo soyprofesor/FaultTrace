@@ -15,12 +15,12 @@ internal static class ProblemJsonWriter
 {
     // The body is never embedded in HTML, and the response has its own content type, so text stays readable:
     // Uzbek apostrophes and Cyrillic aren't escaped.
-    private static readonly JsonWriterOptions WriterOptions = new JsonWriterOptions
+    private static readonly JsonWriterOptions WriterOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
-    private static readonly JsonSerializerOptions ValueOptions = new JsonSerializerOptions
+    private static readonly JsonSerializerOptions ValueOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -31,7 +31,7 @@ internal static class ProblemJsonWriter
 #endif
     };
 
-    private static readonly HashSet<string> ReservedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> ReservedFields = new(StringComparer.OrdinalIgnoreCase)
     {
         "type", "title", "status", "detail", "instance", "code", "errorId", "traceId", "timestamp", "errors", "debug",
     };
@@ -140,7 +140,7 @@ internal static class ProblemJsonWriter
         // A fault returned from a local catch has no exception here.
         if (exception != null)
         {
-            var lines = exception.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim());
+            var lines = exception.ToString().Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim());
             WriteStrings(writer, "dotnet", lines);
         }
 

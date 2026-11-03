@@ -43,18 +43,12 @@ internal static class FaultLogger
 
     internal static LogLevel GetLevel(FaultCategory category)
     {
-        switch (category)
+        return category switch
         {
-            case FaultCategory.Internal:
-                return LogLevel.Error;
-            case FaultCategory.Unauthorized:
-            case FaultCategory.Forbidden:
-            case FaultCategory.NotFound:
-            case FaultCategory.ClientClosed:
-                return LogLevel.Information;
-            default:
-                return LogLevel.Warning;
-        }
+            FaultCategory.Internal => LogLevel.Error,
+            FaultCategory.Unauthorized or FaultCategory.Forbidden or FaultCategory.NotFound or FaultCategory.ClientClosed => LogLevel.Information,
+            _ => LogLevel.Warning,
+        };
     }
 
     private static string FormatSegment(FaultSegment segment) =>

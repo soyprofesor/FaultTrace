@@ -34,27 +34,17 @@ internal sealed class ExceptionFaultProvider : IFaultProvider
             return FaultCategory.Validation;
         }
 
-        switch (status)
+        return status switch
         {
-            case 401:
-                return FaultCategory.Unauthorized;
-            case 403:
-                return FaultCategory.Forbidden;
-            case 404:
-            case 410:
-                return FaultCategory.NotFound;
-            case 409:
-                return FaultCategory.Conflict;
-            case 499:
-                return FaultCategory.ClientClosed;
-            case 429:
-            case 503:
-                return FaultCategory.Transient;
-            case 504:
-                return FaultCategory.Timeout;
-            default:
-                return status < 500 ? FaultCategory.Business : FaultCategory.Internal;
-        }
+            401 => FaultCategory.Unauthorized,
+            403 => FaultCategory.Forbidden,
+            404 or 410 => FaultCategory.NotFound,
+            409 => FaultCategory.Conflict,
+            499 => FaultCategory.ClientClosed,
+            429 or 503 => FaultCategory.Transient,
+            504 => FaultCategory.Timeout,
+            _ => status < 500 ? FaultCategory.Business : FaultCategory.Internal,
+        };
     }
 
     private Fault? Find(Exception? exception, FaultContext context, int depth)
@@ -114,7 +104,7 @@ internal sealed class ExceptionFaultProvider : IFaultProvider
 
     private Fault? FromInterface(Exception exception, FaultContext context)
     {
-        if (!(exception is IFaultException project))
+        if (exception is not IFaultException project)
         {
             return null;
         }

@@ -5,6 +5,7 @@ using FaultTrace.Core.Localization;
 using FaultTrace.Core.Model;
 using FaultTrace.Core.Options;
 using FaultTrace.Oracle.Options;
+using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 using Driver = global::Oracle.ManagedDataAccess.Client;
@@ -113,6 +114,17 @@ public class OracleFaultTranslatorTests
     }
 
     [Fact]
+    public void MapColumn_MissingCulture_PrefersTheDefaultCulture()
+    {
+        var fault = Create(
+                oracle => oracle.MapColumn("TREASURY_CODE", new Dictionary<string, string> { ["en"] = "English", ["uz-Latn"] = "Xazina kodi" }),
+                new FaultTraceOptions { DefaultCulture = "uz" })
+            .TryTranslate(new Driver.OracleException(RequiredFieldMessage, 1400), new FaultContext("id", culture: "ru"))!;
+
+        fault.UserMessage.ShouldBe("Не заполнено обязательное поле: Xazina kodi");
+    }
+
+    [Fact]
     public void MapColumn_UnmappedColumn_UsesGenericMessage()
     {
         var fault = Create(oracle => oracle.MapColumn("OTHER", new Dictionary<string, string> { ["en"] = "Other" }))
@@ -166,12 +178,14 @@ public class OracleFaultTranslatorTests
     }
 
     [Fact]
-    public void AddRule_ThrowingPredicate_CountsAsNoMatch()
+    public void AddRule_ThrowingPredicate_IsLoggedAndCountsAsNoMatch()
     {
-        var fault = Create(oracle => oracle.AddRule(error => throw new InvalidOperationException(), FaultCategory.Conflict, "x", 409))
+        var logs = new CapturingLoggerFactory();
+        var fault = Create(oracle => oracle.AddRule(error => throw new InvalidOperationException(), FaultCategory.Conflict, "x", 409), loggerFactory: logs)
             .TryTranslate(new Driver.OracleException(RequiredFieldMessage, 1400), new FaultContext("id", culture: "en"))!;
 
         fault.Code.ShouldBe(FaultCodes.RequiredField);
+        logs.Failures.ShouldContain(failure => failure is InvalidOperationException);
     }
 
     [Fact]
@@ -217,15 +231,45 @@ public class OracleFaultTranslatorTests
     private static Fault Translate(string message, int number, string? culture = null) =>
         Create().TryTranslate(new Driver.OracleException(message, number), new FaultContext("id", culture: culture))!;
 
-    private static FaultContext Context() => new FaultContext("id");
+    private static FaultContext Context() => new("id");
 
-    private static IFaultProvider Create(Action<OracleFaultOptions>? configure = null)
+    private static OracleFaultTranslator Create(Action<OracleFaultOptions>? configure = null, FaultTraceOptions? core = null, ILoggerFactory? loggerFactory = null)
     {
         var options = new OracleFaultOptions();
         configure?.Invoke(options);
 
         return new OracleFaultTranslator(
-            new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(new FaultTraceOptions())),
-            Microsoft.Extensions.Options.Options.Create(options));
+            new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(core ?? new FaultTraceOptions())),
+            Microsoft.Extensions.Options.Options.Create(options),
+            loggerFactory);
+    }
+
+    private sealed class CapturingLoggerFactory : ILoggerFactory, ILogger
+    {
+        public List<Exception?> Failures { get; } = [];
+
+        public void AddProvider(ILoggerProvider provider)
+        {
+        }
+
+        public ILogger CreateLogger(string categoryName) => this;
+
+        public void Dispose()
+        {
+        }
+
+#if NET8_0_OR_GREATER
+        public IDisposable BeginScope<TState>(TState state)
+            where TState : notnull => this;
+#else
+        public IDisposable BeginScope<TState>(TState state) => this;
+#endif
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            Failures.Add(exception);
+        }
     }
 }

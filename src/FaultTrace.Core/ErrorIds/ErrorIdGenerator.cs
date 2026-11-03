@@ -12,7 +12,7 @@ public static class ErrorIdGenerator
     private const int IdLength = 8;
     private const int SeparatorIndex = 4;
 
-    // Bytes at or above this limit are discarded, so every character is equally likely.
+    // The largest multiple of the alphabet's 31 characters. Higher bytes are discarded, so every character is equally likely.
     private const int UnbiasedByteLimit = 256 - (256 % 31);
 
     private static readonly RandomNumberGenerator Random = RandomNumberGenerator.Create();

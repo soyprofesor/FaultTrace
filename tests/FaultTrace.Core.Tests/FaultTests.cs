@@ -32,7 +32,7 @@ public class FaultTests
         fault.Status.ShouldBe(400);
         fault.IsTransient.ShouldBeTrue();
         fault.TraceId.ShouldBe("trace");
-        fault.Errors!["amount"].ShouldBe(new[] { "Required" });
+        fault.Errors!["amount"].ShouldBe(["Required"]);
         fault.Provider.ShouldBeSameAs(provider);
     }
 
@@ -107,12 +107,13 @@ public class FaultTests
         errors["other"] = messages;
 
         fault.Errors!.Count.ShouldBe(1);
-        fault.Errors["amount"].ShouldBe(new[] { "Required" });
+        fault.Errors["amount"].ShouldBe(["Required"]);
     }
 
     private static Fault Create(int status = 500) =>
-        new Fault("id", FaultCategory.Internal, FaultCodes.Unexpected, "message", status);
+        new("id", FaultCategory.Internal, FaultCodes.Unexpected, "message", status);
 
     private static Dictionary<string, IReadOnlyList<string>> Errors(string field, string message) =>
-        new Dictionary<string, IReadOnlyList<string>> { [field] = new[] { message } };
+        new()
+        { [field] = [message] };
 }

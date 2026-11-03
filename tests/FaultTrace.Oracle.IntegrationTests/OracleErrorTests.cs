@@ -21,7 +21,7 @@ public class OracleErrorTests
     [OracleFact]
     public void DriverException_IsReadThroughReflection()
     {
-        var exception = _database.Catch(OracleTestObjects.Pack + ".BUSINESS", CommandType.StoredProcedure);
+        var exception = OracleTestDatabase.Catch(OracleTestObjects.Pack + ".BUSINESS", CommandType.StoredProcedure);
 
         var fault = OracleTestDatabase.Translator().Translate(exception);
 
@@ -34,7 +34,7 @@ public class OracleErrorTests
     [OracleFact]
     public void WrappedDriverException_IsFound()
     {
-        var exception = _database.Catch(OracleTestObjects.Pack + ".BUSINESS", CommandType.StoredProcedure);
+        var exception = OracleTestDatabase.Catch(OracleTestObjects.Pack + ".BUSINESS", CommandType.StoredProcedure);
 
         var fault = OracleTestDatabase.Translator().Translate(new AggregateException(new InvalidOperationException("outer", exception)));
 
@@ -44,7 +44,7 @@ public class OracleErrorTests
     [OracleFact]
     public void Business_ShowsTheTextWithoutCodes()
     {
-        var fault = _database.Call("BUSINESS");
+        var fault = OracleTestDatabase.Call("BUSINESS");
 
         fault.Category.ShouldBe(FaultCategory.Business);
         fault.Code.ShouldBe(FaultCodes.Business);
@@ -56,13 +56,13 @@ public class OracleErrorTests
     [OracleFact]
     public void BusinessOnSeveralLines_KeepsThem()
     {
-        _database.Call("BUSINESS_MULTILINE").UserMessage.ShouldBe("First line\nSecond line");
+        OracleTestDatabase.Call("BUSINESS_MULTILINE").UserMessage.ShouldBe("First line\nSecond line");
     }
 
     [OracleFact]
     public void BusinessWithoutText_ShowsTheGenericText()
     {
-        var fault = _database.Call("BUSINESS_EMPTY", culture: "ru");
+        var fault = OracleTestDatabase.Call("BUSINESS_EMPTY", culture: "ru");
 
         fault.Code.ShouldBe(FaultCodes.Business);
         fault.UserMessage.ShouldBe("Не удалось выполнить запрос.");
@@ -71,13 +71,13 @@ public class OracleErrorTests
     [OracleFact]
     public void DuplicatedPrefix_IsRemoved()
     {
-        _database.Call("DUPLICATED_PREFIX").UserMessage.ShouldBe("Limit exceeded");
+        OracleTestDatabase.Call("DUPLICATED_PREFIX").UserMessage.ShouldBe("Limit exceeded");
     }
 
     [OracleFact]
     public void SqlerrmInTheText_LosesOnlyTheCode()
     {
-        var fault = _database.Call("BUSINESS_WITH_SQLERRM");
+        var fault = OracleTestDatabase.Call("BUSINESS_WITH_SQLERRM");
 
         fault.Code.ShouldBe(FaultCodes.Business);
         fault.UserMessage.ShouldNotContain("ORA-");
@@ -87,7 +87,7 @@ public class OracleErrorTests
     [OracleFact]
     public void BusinessFromATrigger_ShowsOnlyTheText()
     {
-        var fault = _database.Call("GUARDED_INSERT");
+        var fault = OracleTestDatabase.Call("GUARDED_INSERT");
 
         fault.Code.ShouldBe(FaultCodes.Business);
         fault.UserMessage.ShouldBe("Row is locked");
@@ -97,7 +97,7 @@ public class OracleErrorTests
     [OracleFact]
     public void BusinessFromAFunction_IsTranslated()
     {
-        var fault = _database.Fails("DECLARE v NUMBER; BEGIN v := " + OracleTestObjects.Pack + ".BUSINESS_VALUE; END;");
+        var fault = OracleTestDatabase.Fails("DECLARE v NUMBER; BEGIN v := " + OracleTestObjects.Pack + ".BUSINESS_VALUE; END;");
 
         fault.Code.ShouldBe(FaultCodes.Business);
         fault.UserMessage.ShouldBe("Limit exceeded");
@@ -106,7 +106,7 @@ public class OracleErrorTests
     [OracleFact]
     public void BusinessFromAFunctionInASelect_IsTranslated()
     {
-        var fault = _database.Fails("SELECT " + OracleTestObjects.Pack + ".BUSINESS_VALUE FROM DUAL");
+        var fault = OracleTestDatabase.Fails("SELECT " + OracleTestObjects.Pack + ".BUSINESS_VALUE FROM DUAL");
 
         fault.Code.ShouldBe(FaultCodes.Business);
         fault.UserMessage.ShouldBe("Limit exceeded");
@@ -116,7 +116,7 @@ public class OracleErrorTests
     [OracleFact]
     public void RequiredOnInsert_HasTheColumn()
     {
-        var fault = _database.Call("REQUIRED_INSERT");
+        var fault = OracleTestDatabase.Call("REQUIRED_INSERT");
 
         fault.Code.ShouldBe(FaultCodes.RequiredField);
         fault.Status.ShouldBe(400);
@@ -130,7 +130,7 @@ public class OracleErrorTests
     [OracleFact]
     public void RequiredOnUpdate_HasTheColumn()
     {
-        var fault = _database.Call("REQUIRED_UPDATE");
+        var fault = OracleTestDatabase.Call("REQUIRED_UPDATE");
 
         fault.Code.ShouldBe(FaultCodes.RequiredField);
         fault.Provider!.NativeCode.ShouldBe("ORA-01407");
@@ -141,7 +141,7 @@ public class OracleErrorTests
     [OracleFact]
     public void MappedColumn_IsNamedForTheUser()
     {
-        var fault = _database.Call("REQUIRED_INSERT", options => options.MapColumn("NAME", new System.Collections.Generic.Dictionary<string, string> { ["en"] = "Customer name" }));
+        var fault = OracleTestDatabase.Call("REQUIRED_INSERT", options => options.MapColumn("NAME", new System.Collections.Generic.Dictionary<string, string> { ["en"] = "Customer name" }));
 
         fault.UserMessage.ShouldContain("Customer name");
         ShouldBeSafe(fault);
@@ -150,7 +150,7 @@ public class OracleErrorTests
     [OracleFact]
     public void TooLong_HasTheColumn()
     {
-        var fault = _database.Call("TOO_LONG");
+        var fault = OracleTestDatabase.Call("TOO_LONG");
 
         fault.Code.ShouldBe(FaultCodes.ValueTooLong);
         fault.Provider!.NativeCode.ShouldBe("ORA-12899");
@@ -161,7 +161,7 @@ public class OracleErrorTests
     [OracleFact]
     public void Duplicate_HasTheConstraint()
     {
-        var fault = _database.Call("DUPLICATE");
+        var fault = OracleTestDatabase.Call("DUPLICATE");
 
         fault.Code.ShouldBe(FaultCodes.Duplicate);
         fault.Status.ShouldBe(409);
@@ -172,7 +172,7 @@ public class OracleErrorTests
     [OracleFact]
     public void MissingParent_HasTheConstraint()
     {
-        var fault = _database.Call("MISSING_PARENT");
+        var fault = OracleTestDatabase.Call("MISSING_PARENT");
 
         fault.Code.ShouldBe(FaultCodes.ReferenceNotFound);
         fault.Provider!.Details["constraint"].ShouldBe("FAULTTRACE_TEST_CHILD_FK");
@@ -182,7 +182,7 @@ public class OracleErrorTests
     [OracleFact]
     public void HasChildren_HasTheConstraint()
     {
-        var fault = _database.Call("HAS_CHILDREN");
+        var fault = OracleTestDatabase.Call("HAS_CHILDREN");
 
         fault.Code.ShouldBe(FaultCodes.HasDependents);
         fault.Status.ShouldBe(409);
@@ -193,7 +193,7 @@ public class OracleErrorTests
     [OracleFact]
     public void MappedConstraint_ShowsItsMessage()
     {
-        var fault = _database.Call("DUPLICATE", options => options.MapConstraint("FAULTTRACE_TEST_PARENT_PK", new System.Collections.Generic.Dictionary<string, string> { ["en"] = "This order already exists" }));
+        var fault = OracleTestDatabase.Call("DUPLICATE", options => options.MapConstraint("FAULTTRACE_TEST_PARENT_PK", new System.Collections.Generic.Dictionary<string, string> { ["en"] = "This order already exists" }));
 
         fault.UserMessage.ShouldBe("This order already exists");
     }
@@ -201,61 +201,61 @@ public class OracleErrorTests
     [OracleFact]
     public void TooLarge_IsAnInvalidFormat()
     {
-        AssertTechnical(_database.Call("TOO_LARGE"), FaultCodes.InvalidFormat, 400, "ORA-01438");
+        AssertTechnical(OracleTestDatabase.Call("TOO_LARGE"), FaultCodes.InvalidFormat, 400, "ORA-01438");
     }
 
     [OracleFact]
     public void BadNumber_IsAnInvalidFormat()
     {
-        AssertTechnical(_database.Call("BAD_NUMBER"), FaultCodes.InvalidFormat, 400, "ORA-01722");
+        AssertTechnical(OracleTestDatabase.Call("BAD_NUMBER"), FaultCodes.InvalidFormat, 400, "ORA-01722");
     }
 
     [OracleFact]
     public void BadDate_IsAnInvalidFormat()
     {
-        AssertTechnical(_database.Call("BAD_DATE"), FaultCodes.InvalidFormat, 400, "ORA-01830");
+        AssertTechnical(OracleTestDatabase.Call("BAD_DATE"), FaultCodes.InvalidFormat, 400, "ORA-01830");
     }
 
     [OracleFact]
     public void NoData_IsUnexpected()
     {
-        AssertTechnical(_database.Call("NO_DATA"), FaultCodes.Unexpected, 500, "ORA-01403");
+        AssertTechnical(OracleTestDatabase.Call("NO_DATA"), FaultCodes.Unexpected, 500, "ORA-01403");
     }
 
     [OracleFact]
     public void TooManyRows_IsUnexpected()
     {
-        AssertTechnical(_database.Call("TOO_MANY"), FaultCodes.Unexpected, 500, "ORA-01422");
+        AssertTechnical(OracleTestDatabase.Call("TOO_MANY"), FaultCodes.Unexpected, 500, "ORA-01422");
     }
 
     [OracleFact]
     public void ValueError_IsUnexpected()
     {
-        AssertTechnical(_database.Call("VALUE_ERROR"), FaultCodes.Unexpected, 500, "ORA-06502");
+        AssertTechnical(OracleTestDatabase.Call("VALUE_ERROR"), FaultCodes.Unexpected, 500, "ORA-06502");
     }
 
     [OracleFact]
     public void MissingTable_IsUnexpected()
     {
-        AssertTechnical(_database.Call("MISSING_TABLE"), FaultCodes.Unexpected, 500, "ORA-00942");
+        AssertTechnical(OracleTestDatabase.Call("MISSING_TABLE"), FaultCodes.Unexpected, 500, "ORA-00942");
     }
 
     [OracleFact]
     public void PlainSqlOnAMissingTable_IsUnexpected()
     {
-        AssertTechnical(_database.Fails("DELETE FROM FAULTTRACE_TEST_MISSING"), FaultCodes.Unexpected, 500, "ORA-00942");
+        AssertTechnical(OracleTestDatabase.Fails("DELETE FROM FAULTTRACE_TEST_MISSING"), FaultCodes.Unexpected, 500, "ORA-00942");
     }
 
     [OracleFact]
     public void BlockThatDoesNotCompile_IsUnexpected()
     {
-        AssertTechnical(_database.Fails("BEGIN FAULTTRACE_TEST_MISSING; END;"), FaultCodes.Unexpected, 500, "ORA-06550");
+        AssertTechnical(OracleTestDatabase.Fails("BEGIN FAULTTRACE_TEST_MISSING; END;"), FaultCodes.Unexpected, 500, "ORA-06550");
     }
 
     [OracleFact]
     public void UnknownCode_IsMarkedUnmapped()
     {
-        var fault = _database.Call("DIVIDE_BY_ZERO");
+        var fault = OracleTestDatabase.Call("DIVIDE_BY_ZERO");
 
         AssertTechnical(fault, FaultCodes.Unexpected, 500, "ORA-01476");
         fault.Provider!.IsUnmapped.ShouldBeTrue();

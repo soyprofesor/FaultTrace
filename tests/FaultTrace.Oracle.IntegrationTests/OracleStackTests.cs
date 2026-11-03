@@ -5,7 +5,7 @@ using Xunit;
 
 namespace FaultTrace.Oracle.IntegrationTests;
 
-// Exact package lines, so a change in how Oracle orders the stack can't go unnoticed.
+// Expects exact package lines, which pins down how Oracle orders the stack.
 [Collection(OracleCollection.Name)]
 public class OracleStackTests
 {
@@ -19,13 +19,13 @@ public class OracleStackTests
     [OracleFact]
     public void Business_HasItsOwnLine()
     {
-        _database.Call("BUSINESS").Provider!.Origin!.ToString().ShouldBe(_database.Frame("business"));
+        OracleTestDatabase.Call("BUSINESS").Provider!.Origin!.ToString().ShouldBe(_database.Frame("business"));
     }
 
     [OracleFact]
     public void PlainStack_FindsOriginAndEntry()
     {
-        var details = _database.Call("PLAIN_STACK").Provider!;
+        var details = OracleTestDatabase.Call("PLAIN_STACK").Provider!;
 
         details.Origin!.ToString().ShouldBe(_database.Frame("level3"));
         details.Entry!.ToString().ShouldBe(_database.Frame("level1"));
@@ -34,7 +34,7 @@ public class OracleStackTests
     [OracleFact]
     public void NestedRaise_StartsAtTheLastRaiseAndKeepsTheRealLineInTheChain()
     {
-        var details = _database.Call("NESTED_RAISE").Provider!;
+        var details = OracleTestDatabase.Call("NESTED_RAISE").Provider!;
 
         details.NativeCode.ShouldBe("ORA-01400");
 
@@ -47,7 +47,7 @@ public class OracleStackTests
     [OracleFact]
     public void KeepErrors_TakesOriginFromTheTechnicalError()
     {
-        var fault = _database.Call("KEEP_ERRORS");
+        var fault = OracleTestDatabase.Call("KEEP_ERRORS");
 
         fault.Code.ShouldBe("business");
         fault.UserMessage.ShouldBe("Could not save");
@@ -58,7 +58,7 @@ public class OracleStackTests
     [OracleFact]
     public void WithoutKeepErrors_OriginIsTheRaiseLine()
     {
-        var fault = _database.Call("DROP_ERRORS");
+        var fault = OracleTestDatabase.Call("DROP_ERRORS");
 
         fault.UserMessage.ShouldBe("Could not save");
         fault.Provider!.Origin!.ToString().ShouldBe(_database.Frame("drop_raise"));
@@ -67,7 +67,7 @@ public class OracleStackTests
     [OracleFact]
     public void LabelledBacktrace_RecoversTheOrigin()
     {
-        var fault = _database.Call("BACKTRACE_LABELLED");
+        var fault = OracleTestDatabase.Call("BACKTRACE_LABELLED");
 
         fault.Provider!.Origin!.ToString().ShouldBe(_database.Frame("labelled_insert"));
         fault.UserMessage.ShouldBe("Could not save");
@@ -76,7 +76,7 @@ public class OracleStackTests
     [OracleFact]
     public void PlainBacktrace_RecoversTheOrigin()
     {
-        var fault = _database.Call("BACKTRACE_PLAIN");
+        var fault = OracleTestDatabase.Call("BACKTRACE_PLAIN");
 
         fault.Provider!.Origin!.ToString().ShouldBe(_database.Frame("plain_insert"));
         fault.UserMessage.ShouldBe("Could not save");
@@ -85,7 +85,7 @@ public class OracleStackTests
     [OracleFact]
     public void IgnoredPackage_IsLeftOutOfOriginButNotOutOfTheRawMessage()
     {
-        var details = _database.Call("THROUGH_HELPER", options => options.IgnoredPackages.Add(OracleTestObjects.Helper)).Provider!;
+        var details = OracleTestDatabase.Call("THROUGH_HELPER", options => options.IgnoredPackages.Add(OracleTestObjects.Helper)).Provider!;
 
         details.Origin!.ToString().ShouldBe(_database.Frame("helper_call"));
         details.RawMessage!.ShouldContain(OracleTestObjects.Helper);
@@ -94,7 +94,7 @@ public class OracleStackTests
     [OracleFact]
     public void Trigger_IsTheOrigin()
     {
-        var details = _database.Call("GUARDED_INSERT").Provider!;
+        var details = OracleTestDatabase.Call("GUARDED_INSERT").Provider!;
 
         details.Origin!.Unit.ShouldBe(_database.Trigger);
         details.Entry!.Unit.ShouldBe(_database.Pack);
@@ -103,7 +103,7 @@ public class OracleStackTests
     [OracleFact]
     public void TechnicalErrorInATrigger_HasTheTriggerAsItsOrigin()
     {
-        var fault = _database.Call("GUARDED_TECHNICAL");
+        var fault = OracleTestDatabase.Call("GUARDED_TECHNICAL");
 
         fault.Code.ShouldBe("required_field");
         fault.Provider!.Origin!.Unit.ShouldBe(_database.Trigger);

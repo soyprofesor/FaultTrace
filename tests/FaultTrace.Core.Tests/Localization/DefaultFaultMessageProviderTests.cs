@@ -11,7 +11,7 @@ namespace FaultTrace.Core.Tests.Localization;
 
 public class DefaultFaultMessageProviderTests
 {
-    private static readonly string[] Cultures = { "en", "uz-Latn", "uz-Cyrl", "ru" };
+    private static readonly string[] Cultures = ["en", "uz-Latn", "uz-Cyrl", "ru"];
 
     [Fact]
     public void Catalog_HasEveryCodeInEveryCulture()

@@ -214,7 +214,7 @@ public class HandlingOptionsTests
             });
     }
 
-    private static StringContent Json(string json) => new StringContent(json, Encoding.UTF8, "application/json");
+    private static StringContent Json(string json) => new(json, Encoding.UTF8, "application/json");
 
     private sealed class RecordingHook : IFaultHook
     {

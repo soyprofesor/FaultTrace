@@ -2,7 +2,7 @@ using Xunit;
 
 namespace FaultTrace.Oracle.IntegrationTests.Infrastructure;
 
-// Without a database the test shows as skipped instead of failing, so CI and other machines stay green.
+// Without a configured database the test is skipped instead of failing.
 public sealed class OracleFactAttribute : FactAttribute
 {
     public OracleFactAttribute()

@@ -12,7 +12,7 @@ using Driver = global::Oracle.ManagedDataAccess.Client;
 
 namespace FaultTrace.AspNetCore.Tests.DependencyInjection;
 
-// Lives here because this project has a real DI container through the ASP.NET Core shared framework.
+// Needs a real DI container, which this project has through the ASP.NET Core shared framework.
 public class AddFaultTraceCoreTests
 {
     private const string RequiredFieldMessage =

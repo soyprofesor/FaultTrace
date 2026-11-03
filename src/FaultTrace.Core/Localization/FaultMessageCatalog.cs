@@ -6,7 +6,7 @@ namespace FaultTrace.Core.Localization;
 internal static class FaultMessageCatalog
 {
     public static Dictionary<string, Dictionary<string, FaultMessage>> Create() =>
-        new Dictionary<string, Dictionary<string, FaultMessage>>
+        new()
         {
             [CultureNormalizer.English] = new Dictionary<string, FaultMessage>
             {
