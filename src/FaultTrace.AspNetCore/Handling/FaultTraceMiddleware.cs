@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FaultTrace.AspNetCore.Configuration;
 using FaultTrace.AspNetCore.Culture;
 using FaultTrace.AspNetCore.Response;
 using FaultTrace.Core.Abstractions;
@@ -8,6 +9,7 @@ using FaultTrace.Core.ErrorIds;
 using FaultTrace.Core.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FaultTrace.AspNetCore.Handling;
 
@@ -18,6 +20,7 @@ internal sealed class FaultTraceMiddleware
     private readonly IFaultFactory _faults;
     private readonly FaultCultureResolver _cultures;
     private readonly ProblemResponseWriter _writer;
+    private readonly IOptionsMonitor<FaultTraceAspNetCoreOptions> _options;
     private readonly ILogger _logger;
 
     public FaultTraceMiddleware(
@@ -26,6 +29,7 @@ internal sealed class FaultTraceMiddleware
         IFaultFactory faults,
         FaultCultureResolver cultures,
         ProblemResponseWriter writer,
+        IOptionsMonitor<FaultTraceAspNetCoreOptions> options,
         ILoggerFactory loggerFactory)
     {
         _next = next;
@@ -33,6 +37,7 @@ internal sealed class FaultTraceMiddleware
         _faults = faults;
         _cultures = cultures;
         _writer = writer;
+        _options = options;
         _logger = loggerFactory.CreateLogger("FaultTrace");
     }
 
@@ -48,9 +53,30 @@ internal sealed class FaultTraceMiddleware
             return;
         }
 
-        if (EmptyStatusFaults.TryGet(context.Response.StatusCode, out var category, out var code) && EmptyStatusFaults.IsEmpty(context.Response))
+        if (EmptyStatusFaults.TryGet(context.Response.StatusCode, out var category, out var code)
+            && EmptyStatusFaults.IsEmpty(context.Response)
+            && ShouldHandleEmpty(context))
         {
             await HandleEmptyAsync(context, category, code).ConfigureAwait(false);
+        }
+    }
+
+    private bool ShouldHandleEmpty(HttpContext context)
+    {
+        var options = _options.CurrentValue;
+        if (!options.HandleEmptyStatus)
+        {
+            return false;
+        }
+
+        try
+        {
+            return options.EmptyStatusFilter == null || options.EmptyStatusFilter(context);
+        }
+        catch (Exception failure)
+        {
+            _logger.LogError(failure, "FaultTrace empty status filter failed");
+            return true;
         }
     }
 

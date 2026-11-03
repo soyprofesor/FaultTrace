@@ -50,6 +50,24 @@ public sealed class FaultTraceAspNetCoreOptions
     /// <summary>Gets the user ID instead of reading a claim. A <see langword="null"/> result or a failure means <c>anonymous</c>.</summary>
     public Func<HttpContext, string?>? UserIdResolver { get; set; }
 
+    /// <summary>
+    /// Whether a 4xx or 5xx response without a body gets the template. The default is <see langword="true"/>.
+    /// Set it to <see langword="false"/> to keep such responses as they are. Unhandled exceptions always get the template.
+    /// </summary>
+    public bool HandleEmptyStatus { get; set; } = true;
+
+    /// <summary>
+    /// Narrows <see cref="HandleEmptyStatus"/> to some requests, for example to leave a legacy path alone.
+    /// A failure is logged, and the response still gets the template.
+    /// </summary>
+    public Func<HttpContext, bool>? EmptyStatusFilter { get; set; }
+
+    /// <summary>
+    /// Whether ModelState failures and the empty results of <c>[ApiController]</c> get the template, replacing the MVC
+    /// format and any <c>InvalidModelStateResponseFactory</c>. The default is <see langword="true"/>. Read once at startup.
+    /// </summary>
+    public bool HandleValidation { get; set; } = true;
+
     /// <summary>How the response culture is found.</summary>
     public FaultTraceCultureOptions Culture { get; } = new FaultTraceCultureOptions();
 

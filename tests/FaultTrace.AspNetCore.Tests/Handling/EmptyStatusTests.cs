@@ -23,6 +23,18 @@ public class EmptyStatusTests
     [InlineData(404, FaultCodes.NotFound, "not-found", "Not found", LogLevel.Information)]
     [InlineData(405, FaultCodes.MethodNotAllowed, "method-not-allowed", "Method not allowed", LogLevel.Information)]
     [InlineData(415, FaultCodes.UnsupportedMediaType, "unsupported-media-type", "Unsupported format", LogLevel.Warning)]
+    [InlineData(400, FaultCodes.Validation, "validation", "Invalid data", LogLevel.Warning)]
+    [InlineData(408, FaultCodes.Business, "business", "Request could not be completed", LogLevel.Warning)]
+    [InlineData(409, FaultCodes.Conflict, "conflict", "Conflict", LogLevel.Warning)]
+    [InlineData(410, FaultCodes.NotFound, "not-found", "Not found", LogLevel.Information)]
+    [InlineData(413, FaultCodes.Business, "business", "Request could not be completed", LogLevel.Warning)]
+    [InlineData(429, FaultCodes.TooManyRequests, "too-many-requests", "Too many requests", LogLevel.Warning)]
+    [InlineData(499, FaultCodes.ClientClosed, "client-closed", "Request cancelled", LogLevel.Information)]
+    [InlineData(500, FaultCodes.Unexpected, "unexpected", "Unexpected error", LogLevel.Error)]
+    [InlineData(501, FaultCodes.Unexpected, "unexpected", "Unexpected error", LogLevel.Error)]
+    [InlineData(502, FaultCodes.Unexpected, "unexpected", "Unexpected error", LogLevel.Error)]
+    [InlineData(503, FaultCodes.Unavailable, "unavailable", "Service unavailable", LogLevel.Warning)]
+    [InlineData(504, FaultCodes.Timeout, "timeout", "Request timed out", LogLevel.Warning)]
     public async Task EmptyStatus_GetsTheTemplateAndIsLogged(int status, string code, string typeName, string title, LogLevel level)
     {
         using var app = await StartWithStatusAsync(status);
@@ -158,10 +170,8 @@ public class EmptyStatusTests
     [InlineData(200)]
     [InlineData(204)]
     [InlineData(302)]
-    [InlineData(400)]
-    [InlineData(409)]
-    [InlineData(500)]
-    public async Task OtherEmptyStatus_IsNotTouched(int status)
+    [InlineData(304)]
+    public async Task NonErrorStatus_IsNotTouched(int status)
     {
         using var app = await StartWithStatusAsync(status);
 

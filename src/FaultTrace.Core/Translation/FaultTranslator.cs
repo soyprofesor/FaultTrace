@@ -90,7 +90,8 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
             var text = string.IsNullOrWhiteSpace(detail)
                 ? (_messages.Find(code, resolvedCulture) ?? _messages.Get(FaultCodes.ForCategory(category), resolvedCulture)).Detail
                 : detail!;
-            fault = new Fault(ErrorIdGenerator.NewId(), category, code, text, status, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
+            var isTransient = category == FaultCategory.Transient || category == FaultCategory.Timeout;
+            fault = new Fault(ErrorIdGenerator.NewId(), category, code, text, status, isTransient, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
         }
         catch (Exception failure)
         {

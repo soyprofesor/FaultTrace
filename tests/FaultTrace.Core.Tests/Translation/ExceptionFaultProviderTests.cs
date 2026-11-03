@@ -20,6 +20,8 @@ public class ExceptionFaultProviderTests
     [InlineData(401, FaultCategory.Unauthorized)]
     [InlineData(403, FaultCategory.Forbidden)]
     [InlineData(404, FaultCategory.NotFound)]
+    [InlineData(410, FaultCategory.NotFound)]
+    [InlineData(429, FaultCategory.Transient)]
     [InlineData(409, FaultCategory.Conflict)]
     [InlineData(422, FaultCategory.Business)]
     [InlineData(499, FaultCategory.ClientClosed)]

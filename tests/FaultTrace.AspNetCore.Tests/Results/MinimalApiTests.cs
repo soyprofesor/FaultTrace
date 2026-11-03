@@ -143,14 +143,14 @@ public class MinimalApiTests
     }
 
     [Fact]
-    public async Task EmptyBadRequest_IsNotTouched()
+    public async Task EmptyBadRequest_GetsTheTemplate()
     {
         using var app = await StartAsync(endpoints => endpoints.MapPost("/orders", () => HttpResults.BadRequest()));
 
-        using var response = await app.Client.PostAsync("/orders", Json());
+        var problem = await PostAsync(app);
 
-        ((int)response.StatusCode).ShouldBe(400);
-        (await response.Content.ReadAsStringAsync()).ShouldBeEmpty();
+        problem.Status.ShouldBe(400);
+        problem.Get("code").ShouldBe(FaultCodes.Validation);
     }
 
     [Fact]

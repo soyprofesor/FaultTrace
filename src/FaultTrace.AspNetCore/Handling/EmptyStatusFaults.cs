@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace FaultTrace.AspNetCore.Handling;
 
-// The statuses that the framework and auth handlers commonly return without a body.
+// Every error status can come back without a body: from the framework, an auth handler, a rate limiter or a plain StatusCode(500).
 internal static class EmptyStatusFaults
 {
     // Same test as the framework's status code pages. A content type means the response belongs to someone else.
@@ -16,6 +16,11 @@ internal static class EmptyStatusFaults
     {
         switch (status)
         {
+            case StatusCodes.Status400BadRequest:
+            case StatusCodes.Status415UnsupportedMediaType:
+                category = FaultCategory.Validation;
+                code = status == StatusCodes.Status400BadRequest ? FaultCodes.Validation : FaultCodes.UnsupportedMediaType;
+                return true;
             case StatusCodes.Status401Unauthorized:
                 category = FaultCategory.Unauthorized;
                 code = FaultCodes.Unauthorized;
@@ -25,6 +30,7 @@ internal static class EmptyStatusFaults
                 code = FaultCodes.Forbidden;
                 return true;
             case StatusCodes.Status404NotFound:
+            case StatusCodes.Status410Gone:
                 category = FaultCategory.NotFound;
                 code = FaultCodes.NotFound;
                 return true;
@@ -32,14 +38,44 @@ internal static class EmptyStatusFaults
                 category = FaultCategory.NotFound;
                 code = FaultCodes.MethodNotAllowed;
                 return true;
-            case StatusCodes.Status415UnsupportedMediaType:
-                category = FaultCategory.Validation;
-                code = FaultCodes.UnsupportedMediaType;
+            case StatusCodes.Status409Conflict:
+                category = FaultCategory.Conflict;
+                code = FaultCodes.Conflict;
                 return true;
-            default:
-                category = default;
-                code = string.Empty;
-                return false;
+            case StatusCodes.Status429TooManyRequests:
+                category = FaultCategory.Transient;
+                code = FaultCodes.TooManyRequests;
+                return true;
+            case 499:
+                category = FaultCategory.ClientClosed;
+                code = FaultCodes.ClientClosed;
+                return true;
+            case StatusCodes.Status503ServiceUnavailable:
+                category = FaultCategory.Transient;
+                code = FaultCodes.Unavailable;
+                return true;
+            case StatusCodes.Status504GatewayTimeout:
+                category = FaultCategory.Timeout;
+                code = FaultCodes.Timeout;
+                return true;
         }
+
+        if (status >= 400 && status < 500)
+        {
+            category = FaultCategory.Business;
+            code = FaultCodes.Business;
+            return true;
+        }
+
+        if (status >= 500 && status < 600)
+        {
+            category = FaultCategory.Internal;
+            code = FaultCodes.Unexpected;
+            return true;
+        }
+
+        category = default;
+        code = string.Empty;
+        return false;
     }
 }

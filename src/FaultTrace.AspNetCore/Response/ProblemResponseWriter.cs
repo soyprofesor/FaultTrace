@@ -65,7 +65,9 @@ internal sealed class ProblemResponseWriter
         response.ContentLength = body.Length;
         response.Headers["Cache-Control"] = "no-store";
 
-        if (fault.Status == StatusCodes.Status503ServiceUnavailable && options.RetryAfterSeconds > 0)
+        if (fault.Status == StatusCodes.Status503ServiceUnavailable
+            && options.RetryAfterSeconds > 0
+            && !response.Headers.ContainsKey("Retry-After"))
         {
             response.Headers["Retry-After"] = options.RetryAfterSeconds.ToString(CultureInfo.InvariantCulture);
         }

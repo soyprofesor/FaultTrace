@@ -44,6 +44,12 @@ public static class FaultCodes
     /// <summary>The record cannot be removed because other records depend on it.</summary>
     public const string HasDependents = "has_dependents";
 
+    /// <summary>The request conflicts with the current state of the data.</summary>
+    public const string Conflict = "conflict";
+
+    /// <summary>The caller sent too many requests.</summary>
+    public const string TooManyRequests = "too_many_requests";
+
     /// <summary>An unexpected failure, usually a bug.</summary>
     public const string Unexpected = "unexpected";
 
@@ -66,8 +72,9 @@ public static class FaultCodes
         switch (category)
         {
             case FaultCategory.Business:
-            case FaultCategory.Conflict:
                 return Business;
+            case FaultCategory.Conflict:
+                return Conflict;
             case FaultCategory.Validation:
                 return Validation;
             case FaultCategory.Unauthorized:

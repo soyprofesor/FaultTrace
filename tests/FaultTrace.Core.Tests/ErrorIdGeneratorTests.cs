@@ -46,7 +46,8 @@ public class ErrorIdGeneratorTests
     [Fact]
     public void NewId_DoesNotRepeat()
     {
-        var ids = Sample().ToList();
+        // Small on purpose: 20,000 IDs out of 31^8 repeat by pure chance about once in 4,000 runs, which would make this flaky.
+        var ids = Enumerable.Range(0, 1000).Select(_ => ErrorIdGenerator.NewId()).ToList();
 
         ids.Distinct().Count().ShouldBe(ids.Count);
     }

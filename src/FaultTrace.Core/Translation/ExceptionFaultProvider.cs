@@ -41,11 +41,13 @@ internal sealed class ExceptionFaultProvider : IFaultProvider
             case 403:
                 return FaultCategory.Forbidden;
             case 404:
+            case 410:
                 return FaultCategory.NotFound;
             case 409:
                 return FaultCategory.Conflict;
             case 499:
                 return FaultCategory.ClientClosed;
+            case 429:
             case 503:
                 return FaultCategory.Transient;
             case 504:
