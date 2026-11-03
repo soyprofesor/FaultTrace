@@ -13,6 +13,9 @@ jobs:
     # .NET Core 3.1 needs OpenSSL 1.x, which current Ubuntu images don't have.
     runs-on: windows-latest
     environment: nuget
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -29,8 +32,14 @@ jobs:
       - run: dotnet build -c Release --no-restore -p:Version=${{ env.VERSION }}
       - run: dotnet test -c Release --no-build
       - run: dotnet pack -c Release -o artifacts --no-build -p:Version=${{ env.VERSION }}
+      # Trusted publishing: nuget.org gives a short-lived key to this workflow, so no secret is stored.
+      - name: Log in to nuget.org
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: soyprofesor
       - name: Publish to nuget.org
         shell: bash
         run: dotnet nuget push "artifacts/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
