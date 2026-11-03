@@ -13,6 +13,13 @@ public interface IFaultMessageProvider
     string ResolveCulture(string? culture);
 
     /// <summary>
+    /// Finds the supported culture a value means, without falling back to the default culture.
+    /// </summary>
+    /// <param name="culture">The value, for example <c>uz-UZ</c> or a project's alias.</param>
+    /// <returns>A supported culture, or <see langword="null"/> if the value doesn't match one.</returns>
+    string? FindCulture(string? culture);
+
+    /// <summary>
     /// Gets the texts for a fault code. Falls back to the default culture, then to English, and never returns empty text.
     /// </summary>
     /// <param name="code">The fault code. See <see cref="Model.FaultCodes"/>.</param>

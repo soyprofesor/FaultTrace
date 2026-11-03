@@ -39,7 +39,8 @@ public static class FaultTraceServiceCollectionExtensions
             provider.GetServices<IFaultProvider>(),
             provider.GetServices<IFaultHook>(),
             provider.GetRequiredService<IFaultMessageProvider>(),
-            provider.GetService<ILoggerFactory>()?.CreateLogger("FaultTrace") ?? NullLogger.Instance));
+            provider.GetService<ILoggerFactory>()?.CreateLogger("FaultTrace") ?? NullLogger.Instance,
+            provider.GetService<IFaultRequestAccessor>()));
 
         return new FaultTraceBuilder(services);
     }

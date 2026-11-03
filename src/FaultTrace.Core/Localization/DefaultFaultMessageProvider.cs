@@ -37,10 +37,10 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
         }
 
         _aliases = new Dictionary<string, string>(values.Aliases, StringComparer.OrdinalIgnoreCase);
-        _defaultCulture = FindSupported(values.DefaultCulture) ?? CultureNormalizer.English;
+        _defaultCulture = FindCulture(values.DefaultCulture) ?? CultureNormalizer.English;
     }
 
-    public string ResolveCulture(string? culture) => FindSupported(culture) ?? _defaultCulture;
+    public string ResolveCulture(string? culture) => FindCulture(culture) ?? _defaultCulture;
 
     public FaultMessage Get(string code, string culture)
     {
@@ -61,7 +61,7 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
             : null;
     }
 
-    private string? FindSupported(string? culture)
+    public string? FindCulture(string? culture)
     {
         if (culture == null)
         {

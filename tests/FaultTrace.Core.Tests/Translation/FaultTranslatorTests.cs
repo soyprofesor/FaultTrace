@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using FaultTrace.Core.Abstractions;
 using FaultTrace.Core.Localization;
 using FaultTrace.Core.Logging;
@@ -272,13 +274,109 @@ public class FaultTranslatorTests
         _logger.Entries.ShouldContain(entry => entry.Exception.Message == "hook failure");
     }
 
-    private FaultTranslator Create(IFaultProvider[]? providers = null, IFaultHook[]? hooks = null)
+    [Fact]
+    public void Translate_TimeoutAndCancellation_AreTransientTimeouts()
+    {
+        foreach (var exception in new Exception[]
+        {
+            new TimeoutException(),
+            new OperationCanceledException(),
+            new AggregateException(new TaskCanceledException()),
+            new InvalidOperationException("wrapper", new TimeoutException()),
+        })
+        {
+            var fault = Create().Translate(exception);
+
+            fault.Category.ShouldBe(FaultCategory.Timeout);
+            fault.Code.ShouldBe(FaultCodes.Timeout);
+            fault.Status.ShouldBe(504);
+            fault.IsTransient.ShouldBeTrue();
+        }
+    }
+
+    [Fact]
+    public void Translate_ProviderWinsOverTheTimeoutRule()
+    {
+        var fault = Create(providers: new IFaultProvider[] { new FakeProvider(context => Business(context, "first")) })
+            .Translate(new TimeoutException());
+
+        fault.Code.ShouldBe(FaultCodes.Business);
+    }
+
+    [Fact]
+    public void Translate_IoFailure_IsUnexpectedUnlessTheRequestWasAborted()
+    {
+        Create().Translate(new IOException()).Code.ShouldBe(FaultCodes.Unexpected);
+
+        Create(requests: new FakeRequests(() => new FaultRequest(null, null, null, isAborted: true)))
+            .Translate(new IOException()).Code.ShouldBe(FaultCodes.ClientClosed);
+    }
+
+    [Fact]
+    public void Translate_TimeoutFromProviderInAbortedRequest_IsClientClosedAndKeepsDetails()
+    {
+        var details = new ProviderFaultDetails("Fake", "F-1");
+        var provider = new FakeProvider(context =>
+            new Fault(context.ErrorId, FaultCategory.Timeout, FaultCodes.Timeout, "text", 504, isTransient: true, context.TraceId, provider: details));
+
+        var fault = Create(new IFaultProvider[] { provider }, requests: new FakeRequests(() => new FaultRequest(null, null, null, "trace", isAborted: true)))
+            .Translate(new InvalidOperationException(), "ru");
+
+        fault.Category.ShouldBe(FaultCategory.ClientClosed);
+        fault.Code.ShouldBe(FaultCodes.ClientClosed);
+        fault.Status.ShouldBe(499);
+        fault.IsTransient.ShouldBeFalse();
+        fault.UserMessage.ShouldNotBe("text");
+        fault.TraceId.ShouldBe("trace");
+        fault.Provider.ShouldBeSameAs(details);
+        _logger.Entries.Single().Level.ShouldBe(LogLevel.Information);
+    }
+
+    [Fact]
+    public void Translate_BugInAbortedRequest_StaysUnexpected()
+    {
+        Create(requests: new FakeRequests(() => new FaultRequest(null, null, null, isAborted: true)))
+            .Translate(new InvalidOperationException()).Code.ShouldBe(FaultCodes.Unexpected);
+    }
+
+    [Fact]
+    public void Translate_WithRequest_LogsItsContext()
+    {
+        Create(requests: new FakeRequests(() => new FaultRequest("/api/order/add", "POST", "user-1")))
+            .Translate(new InvalidOperationException());
+
+        var entry = _logger.Entries.Single();
+        entry.Properties["Endpoint"].ShouldBe("/api/order/add");
+        entry.Properties["Method"].ShouldBe("POST");
+        entry.Properties["User"].ShouldBe("user-1");
+    }
+
+    [Fact]
+    public void Translate_WithoutRequest_LogsNullContext()
+    {
+        Create().Translate(new InvalidOperationException());
+
+        _logger.Entries.Single().Properties["Endpoint"].ShouldBeNull();
+    }
+
+    [Fact]
+    public void Translate_FailingRequestAccessor_IsLoggedAndTheFaultStillComes()
+    {
+        var fault = Create(requests: new FakeRequests(() => throw new InvalidOperationException("accessor failure")))
+            .Translate(new InvalidOperationException());
+
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+        _logger.Entries.ShouldContain(entry => entry.Exception.Message == "accessor failure");
+    }
+
+    private FaultTranslator Create(IFaultProvider[]? providers = null, IFaultHook[]? hooks = null, IFaultRequestAccessor? requests = null)
     {
         return new FaultTranslator(
             providers ?? Array.Empty<IFaultProvider>(),
             hooks ?? Array.Empty<IFaultHook>(),
             new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(new FaultTraceOptions())),
-            _logger);
+            _logger,
+            requests);
     }
 
     private static Fault Business(FaultContext context, string text) =>
@@ -322,6 +420,20 @@ public class FaultTranslatorTests
     {
         public string ResolveCulture(string? culture) => throw new InvalidOperationException("Message failure");
 
+        public string? FindCulture(string? culture) => throw new InvalidOperationException("Message failure");
+
         public FaultMessage Get(string code, string culture) => throw new InvalidOperationException("Message failure");
+    }
+
+    private sealed class FakeRequests : IFaultRequestAccessor
+    {
+        private readonly Func<FaultRequest?> _get;
+
+        public FakeRequests(Func<FaultRequest?> get)
+        {
+            _get = get;
+        }
+
+        public FaultRequest? GetCurrent() => _get();
     }
 }
