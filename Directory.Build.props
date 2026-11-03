@@ -18,6 +18,8 @@
     <PackageProjectUrl>https://github.com/soyprofesor/FaultTrace</PackageProjectUrl>
     <RepositoryUrl>https://github.com/soyprofesor/FaultTrace</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('Tests'))">
@@ -32,5 +34,10 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
+
+  <ItemGroup Condition="!$(MSBuildProjectName.EndsWith('Tests')) And !$(MSBuildProjectName.StartsWith('Sample'))">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)icon.png" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 
 </Project>

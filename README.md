@@ -86,15 +86,15 @@ From here, these all use the same format:
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md)
-- [ASP.NET Core](docs/aspnetcore.md): what gets handled, settings, your own exceptions
-- [Oracle](docs/oracle.md): what users see, how the origin is found, mapping names
-- [Localization](docs/localization.md): cultures, your own texts
-- [Logging](docs/logging.md): levels, properties, hooks
-- [Workers](docs/workers.md): retry or dead-letter
-- [Error codes](docs/errors/index.md): every `code` a response can have
+- [Getting started](https://soyprofesor.github.io/FaultTrace/getting-started)
+- [ASP.NET Core](https://soyprofesor.github.io/FaultTrace/aspnetcore): what gets handled, settings, your own exceptions
+- [Oracle](https://soyprofesor.github.io/FaultTrace/oracle): what users see, how the origin is found, mapping names
+- [Localization](https://soyprofesor.github.io/FaultTrace/localization): cultures, your own texts
+- [Logging](https://soyprofesor.github.io/FaultTrace/logging): levels, properties, hooks
+- [Workers](https://soyprofesor.github.io/FaultTrace/workers): retry or dead-letter
+- [Error codes](https://soyprofesor.github.io/FaultTrace/errors/): every `code` a response can have
 
-Working examples are in [samples](samples): an API on [.NET 8](samples/Sample.Api.Net8), one on [.NET Core 3.1](samples/Sample.Api.NetCore31) and a [worker](samples/Sample.Worker).
+Working examples are in [samples](https://github.com/soyprofesor/FaultTrace/tree/main/samples): an API on [.NET 8](https://github.com/soyprofesor/FaultTrace/tree/main/samples/Sample.Api.Net8), one on [.NET Core 3.1](https://github.com/soyprofesor/FaultTrace/tree/main/samples/Sample.Api.NetCore31) and a [worker](https://github.com/soyprofesor/FaultTrace/tree/main/samples/Sample.Worker).
 
 ## Building
 
@@ -107,4 +107,4 @@ The integration tests run against a real Oracle database when `FAULTTRACE_TEST_O
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/soyprofesor/FaultTrace/blob/main/LICENSE)
