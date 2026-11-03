@@ -78,7 +78,8 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
         string code,
         int status,
         string? culture = null,
-        IReadOnlyDictionary<string, IReadOnlyList<string>>? errors = null)
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? errors = null,
+        string? detail = null)
     {
         Fault fault;
         string? resolvedCulture = null;
@@ -86,8 +87,10 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
         try
         {
             resolvedCulture = _messages.ResolveCulture(culture ?? request?.Culture);
-            var message = _messages.Get(code, resolvedCulture);
-            fault = new Fault(ErrorIdGenerator.NewId(), category, code, message.Detail, status, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
+            var text = string.IsNullOrWhiteSpace(detail)
+                ? (_messages.Find(code, resolvedCulture) ?? _messages.Get(FaultCodes.ForCategory(category), resolvedCulture)).Detail
+                : detail!;
+            fault = new Fault(ErrorIdGenerator.NewId(), category, code, text, status, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
         }
         catch (Exception failure)
         {

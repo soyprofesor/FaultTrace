@@ -223,7 +223,8 @@ public class EmptyStatusTests
             string code,
             int status,
             string? culture = null,
-            System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>>? errors = null) =>
+            System.Collections.Generic.IReadOnlyDictionary<string, System.Collections.Generic.IReadOnlyList<string>>? errors = null,
+            string? detail = null) =>
             throw new NotSupportedException("factory failure");
     }
 }

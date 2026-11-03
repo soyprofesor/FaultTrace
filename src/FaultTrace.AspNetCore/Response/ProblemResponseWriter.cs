@@ -46,7 +46,8 @@ internal sealed class ProblemResponseWriter
                 fault,
                 context.Request.PathBase.Add(context.Request.Path).ToString(),
                 fault.TraceId ?? context.TraceIdentifier,
-                exception != null && _exposure.IsAllowed(context) ? exception : null),
+                exception,
+                (exception != null || fault.Provider != null) && _exposure.IsAllowed(context)),
             Enrich(context, fault),
             (key, failure) => _logger.LogError(failure, "FaultTrace left out problem field {Field} of fault {ErrorId}", key, fault.ErrorId));
 

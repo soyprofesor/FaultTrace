@@ -397,6 +397,22 @@ public class FaultTranslatorTests
     }
 
     [Fact]
+    public void FactoryFault_ShowsItsOwnDetail()
+    {
+        var fault = Create().Create(FaultCategory.Business, "order_closed", 400, detail: "Order is closed");
+
+        fault.UserMessage.ShouldBe("Order is closed");
+    }
+
+    [Fact]
+    public void FactoryFault_WithAnOwnCode_UsesTheTextOfItsCategory()
+    {
+        var fault = Create().Create(FaultCategory.NotFound, "order_missing", 404, "ru");
+
+        fault.UserMessage.ShouldBe("Запрошенные данные не найдены.");
+    }
+
+    [Fact]
     public void FactoryFault_WithInvalidArguments_FallsBackAndLogs()
     {
         var fault = Create().Create(FaultCategory.NotFound, FaultCodes.NotFound, 200);

@@ -64,9 +64,9 @@ internal static class ProblemJsonWriter
                 WriteExtension(writer, extension.Key, extension.Value, onFieldFailure);
             }
 
-            if (problem.DebugException != null)
+            if (problem.ShowDebug)
             {
-                WriteDebug(writer, fault.Provider, problem.DebugException);
+                WriteDebug(writer, fault.Provider, problem.Exception);
             }
 
             writer.WriteEndObject();
@@ -112,12 +112,12 @@ internal static class ProblemJsonWriter
         }
     }
 
-    private static void WriteDebug(Utf8JsonWriter writer, ProviderFaultDetails? provider, Exception exception)
+    private static void WriteDebug(Utf8JsonWriter writer, ProviderFaultDetails? provider, Exception? exception)
     {
         writer.WriteStartObject("debug");
         WriteIfPresent(writer, "provider", provider?.Provider);
         WriteIfPresent(writer, "nativeCode", provider?.NativeCode);
-        writer.WriteString("message", provider?.RawMessage ?? exception.Message);
+        WriteIfPresent(writer, "message", provider?.RawMessage ?? exception?.Message);
         WriteIfPresent(writer, "origin", provider?.Origin?.ToString());
         WriteIfPresent(writer, "entry", provider?.Entry?.ToString());
 
@@ -137,8 +137,13 @@ internal static class ProblemJsonWriter
             writer.WriteEndObject();
         }
 
-        var lines = exception.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim());
-        WriteStrings(writer, "dotnet", lines);
+        // A fault returned from a local catch has no exception here.
+        if (exception != null)
+        {
+            var lines = exception.ToString().Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).Select(line => line.Trim());
+            WriteStrings(writer, "dotnet", lines);
+        }
+
         writer.WriteEndObject();
     }
 
@@ -178,14 +183,15 @@ internal static class ProblemJsonWriter
 
     internal sealed class Problem
     {
-        public Problem(string type, string title, Fault fault, string instance, string? traceId, Exception? debugException)
+        public Problem(string type, string title, Fault fault, string instance, string? traceId, Exception? exception, bool showDebug)
         {
             Type = type;
             Title = title;
             Fault = fault;
             Instance = instance;
             TraceId = traceId;
-            DebugException = debugException;
+            Exception = exception;
+            ShowDebug = showDebug;
         }
 
         public string Type { get; }
@@ -198,7 +204,8 @@ internal static class ProblemJsonWriter
 
         public string? TraceId { get; }
 
-        // Set only when the debug block is allowed.
-        public Exception? DebugException { get; }
+        public Exception? Exception { get; }
+
+        public bool ShowDebug { get; }
     }
 }
