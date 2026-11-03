@@ -369,6 +369,43 @@ public class FaultTranslatorTests
         _logger.Entries.ShouldContain(entry => entry.Exception.Message == "accessor failure");
     }
 
+    [Fact]
+    public void FactoryFault_UsesTheLocalizedMessageAndLogsOnce()
+    {
+        var hook = new FakeHook();
+
+        var fault = Create(hooks: new IFaultHook[] { hook }).Create(FaultCategory.NotFound, FaultCodes.NotFound, 404, "ru");
+
+        fault.Status.ShouldBe(404);
+        fault.Code.ShouldBe(FaultCodes.NotFound);
+        fault.UserMessage.ShouldBe("Запрошенные данные не найдены.");
+        fault.ErrorId.Length.ShouldBe(9);
+        _logger.Entries.Count.ShouldBe(1);
+        _logger.Entries[0].Level.ShouldBe(LogLevel.Information);
+        hook.Calls.Single().Exception.ShouldBeNull();
+    }
+
+    [Fact]
+    public void FactoryFault_KeepsValidationErrors()
+    {
+        var errors = new Dictionary<string, IReadOnlyList<string>> { ["amount"] = new[] { "Required" } };
+
+        var fault = Create().Create(FaultCategory.Validation, FaultCodes.Validation, 400, errors: errors);
+
+        fault.Errors!["amount"].ShouldBe(new[] { "Required" });
+        _logger.Entries[0].Level.ShouldBe(LogLevel.Warning);
+    }
+
+    [Fact]
+    public void FactoryFault_WithInvalidArguments_FallsBackAndLogs()
+    {
+        var fault = Create().Create(FaultCategory.NotFound, FaultCodes.NotFound, 200);
+
+        fault.Code.ShouldBe(FaultCodes.Unexpected);
+        fault.Status.ShouldBe(500);
+        _logger.Entries.ShouldContain(entry => entry.Exception is ArgumentOutOfRangeException);
+    }
+
     private FaultTranslator Create(IFaultProvider[]? providers = null, IFaultHook[]? hooks = null, IFaultRequestAccessor? requests = null)
     {
         return new FaultTranslator(
@@ -403,9 +440,9 @@ public class FaultTranslatorTests
             _failure = failure;
         }
 
-        public List<(Fault Fault, Exception Exception)> Calls { get; } = new List<(Fault, Exception)>();
+        public List<(Fault Fault, Exception? Exception)> Calls { get; } = new List<(Fault, Exception?)>();
 
-        public void OnFault(Fault fault, Exception exception)
+        public void OnFault(Fault fault, Exception? exception)
         {
             if (_failure != null)
             {

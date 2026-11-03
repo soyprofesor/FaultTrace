@@ -16,7 +16,7 @@ namespace FaultTrace.Core.DependencyInjection;
 public static class FaultTraceServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="IFaultTranslator"/> and its services.
+    /// Registers <see cref="IFaultTranslator"/>, <see cref="IFaultFactory"/> and their services.
     /// </summary>
     /// <param name="services">The services to add to.</param>
     /// <param name="configure">Changes the settings.</param>
@@ -35,12 +35,14 @@ public static class FaultTraceServiceCollectionExtensions
         }
 
         services.TryAddSingleton<IFaultMessageProvider, DefaultFaultMessageProvider>();
-        services.TryAddSingleton<IFaultTranslator>(provider => new FaultTranslator(
+        services.TryAddSingleton(provider => new FaultTranslator(
             provider.GetServices<IFaultProvider>(),
             provider.GetServices<IFaultHook>(),
             provider.GetRequiredService<IFaultMessageProvider>(),
             provider.GetService<ILoggerFactory>()?.CreateLogger("FaultTrace") ?? NullLogger.Instance,
             provider.GetService<IFaultRequestAccessor>()));
+        services.TryAddSingleton<IFaultTranslator>(provider => provider.GetRequiredService<FaultTranslator>());
+        services.TryAddSingleton<IFaultFactory>(provider => provider.GetRequiredService<FaultTranslator>());
 
         return new FaultTraceBuilder(services);
     }

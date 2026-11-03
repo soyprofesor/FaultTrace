@@ -314,6 +314,6 @@ public class FaultTraceMiddlewareTests
 
         public int Count => _count;
 
-        public void OnFault(Fault fault, Exception exception) => Interlocked.Increment(ref _count);
+        public void OnFault(Fault fault, Exception? exception) => Interlocked.Increment(ref _count);
     }
 }

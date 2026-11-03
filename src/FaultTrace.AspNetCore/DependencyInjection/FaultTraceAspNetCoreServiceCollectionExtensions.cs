@@ -7,9 +7,11 @@ using FaultTrace.AspNetCore.Users;
 using FaultTrace.Core.Abstractions;
 using FaultTrace.Core.DependencyInjection;
 using FaultTrace.Core.Options;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 namespace FaultTrace.AspNetCore.DependencyInjection;
 
@@ -86,5 +88,7 @@ public static class FaultTraceAspNetCoreServiceCollectionExtensions
         services.TryAddSingleton<DetailExposureEvaluator>();
         services.TryAddSingleton<ProblemResponseWriter>();
         services.TryAddSingleton<IFaultRequestAccessor, HttpFaultRequestAccessor>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<ApiBehaviorOptions>, ApiBehaviorSetup>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<MvcOptions>, MvcSetup>());
     }
 }

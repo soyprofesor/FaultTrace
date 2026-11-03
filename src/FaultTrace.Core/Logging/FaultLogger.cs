@@ -15,7 +15,7 @@ internal static class FaultLogger
         "Culture={Culture} Chain={Chain} Details={Details} RawMessage={RawMessage} " +
         "Endpoint={Endpoint} Method={Method} User={User}";
 
-    public static void Log(ILogger logger, Fault fault, Exception exception, string? culture, FaultRequest? request = null)
+    public static void Log(ILogger logger, Fault fault, Exception? exception, string? culture, FaultRequest? request = null)
     {
         var provider = fault.Provider;
 

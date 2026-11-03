@@ -13,6 +13,6 @@ public interface IFaultHook
     /// A failing hook is logged and doesn't affect the response.
     /// </summary>
     /// <param name="fault">The fault.</param>
-    /// <param name="exception">The exception it came from.</param>
-    void OnFault(Fault fault, Exception exception);
+    /// <param name="exception">The exception it came from, or <see langword="null"/> if it came from <see cref="IFaultFactory"/>.</param>
+    void OnFault(Fault fault, Exception? exception);
 }

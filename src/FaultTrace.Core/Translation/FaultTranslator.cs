@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FaultTrace.Core.Translation;
 
-internal sealed class FaultTranslator : IFaultTranslator
+internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
 {
     private const string HandledFaultKey = "FaultTrace.Fault";
     private const string FallbackMessage = "An unexpected error occurred.";
@@ -69,6 +69,34 @@ internal sealed class FaultTranslator : IFaultTranslator
         Remember(exception, fault);
         Log(fault, exception, resolvedCulture, request);
         RunHooks(fault, exception);
+
+        return fault;
+    }
+
+    public Fault Create(
+        FaultCategory category,
+        string code,
+        int status,
+        string? culture = null,
+        IReadOnlyDictionary<string, IReadOnlyList<string>>? errors = null)
+    {
+        Fault fault;
+        string? resolvedCulture = null;
+        var request = GetRequest();
+        try
+        {
+            resolvedCulture = _messages.ResolveCulture(culture);
+            var message = _messages.Get(code, resolvedCulture);
+            fault = new Fault(ErrorIdGenerator.NewId(), category, code, message.Detail, status, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
+        }
+        catch (Exception failure)
+        {
+            LogFailure(failure);
+            fault = CreateFallback();
+        }
+
+        Log(fault, null, resolvedCulture, request);
+        RunHooks(fault, null);
 
         return fault;
     }
@@ -200,7 +228,7 @@ internal sealed class FaultTranslator : IFaultTranslator
         }
     }
 
-    private void Log(Fault fault, Exception exception, string? culture, FaultRequest? request)
+    private void Log(Fault fault, Exception? exception, string? culture, FaultRequest? request)
     {
         try
         {
@@ -212,7 +240,7 @@ internal sealed class FaultTranslator : IFaultTranslator
         }
     }
 
-    private void RunHooks(Fault fault, Exception exception)
+    private void RunHooks(Fault fault, Exception? exception)
     {
         foreach (var hook in _hooks)
         {

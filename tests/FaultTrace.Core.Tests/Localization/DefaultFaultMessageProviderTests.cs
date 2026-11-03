@@ -22,7 +22,7 @@ public class DefaultFaultMessageProviderTests
             .Select(field => (string)field.GetValue(null)!)
             .ToArray();
 
-        codes.Length.ShouldBe(15);
+        codes.Length.ShouldBe(17);
         var catalog = FaultMessageCatalog.Create();
 
         foreach (var culture in Cultures)

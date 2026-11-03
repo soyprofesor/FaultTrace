@@ -15,6 +15,7 @@ internal sealed class FaultTraceMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IFaultTranslator _translator;
+    private readonly IFaultFactory _faults;
     private readonly FaultCultureResolver _cultures;
     private readonly ProblemResponseWriter _writer;
     private readonly ILogger _logger;
@@ -22,12 +23,14 @@ internal sealed class FaultTraceMiddleware
     public FaultTraceMiddleware(
         RequestDelegate next,
         IFaultTranslator translator,
+        IFaultFactory faults,
         FaultCultureResolver cultures,
         ProblemResponseWriter writer,
         ILoggerFactory loggerFactory)
     {
         _next = next;
         _translator = translator;
+        _faults = faults;
         _cultures = cultures;
         _writer = writer;
         _logger = loggerFactory.CreateLogger("FaultTrace");
@@ -42,6 +45,27 @@ internal sealed class FaultTraceMiddleware
         catch (Exception exception)
         {
             await HandleAsync(context, exception).ConfigureAwait(false);
+            return;
+        }
+
+        if (EmptyStatusFaults.TryGet(context.Response.StatusCode, out var category, out var code) && EmptyStatusFaults.IsEmpty(context.Response))
+        {
+            await HandleEmptyAsync(context, category, code).ConfigureAwait(false);
+        }
+    }
+
+    private async Task HandleEmptyAsync(HttpContext context, FaultCategory category, string code)
+    {
+        Fault? fault = null;
+        try
+        {
+            var culture = _cultures.Resolve(context);
+            fault = _faults.Create(category, code, context.Response.StatusCode, culture);
+            await _writer.WriteAsync(context, fault, null, culture).ConfigureAwait(false);
+        }
+        catch (Exception failure)
+        {
+            await WriteFallbackAsync(context, null, fault, failure).ConfigureAwait(false);
         }
     }
 
@@ -72,13 +96,13 @@ internal sealed class FaultTraceMiddleware
         }
     }
 
-    private async Task WriteFallbackAsync(HttpContext context, Exception exception, Fault? fault, Exception failure)
+    private async Task WriteFallbackAsync(HttpContext context, Exception? exception, Fault? fault, Exception failure)
     {
         var errorId = fault?.ErrorId ?? ErrorIdGenerator.NewId();
         try
         {
             _logger.LogError(failure, "FaultTrace failed while handling fault {ErrorId}", errorId);
-            if (fault == null)
+            if (fault == null && exception != null)
             {
                 _logger.LogError(exception, "Fault {ErrorId} is the original error that FaultTrace failed to translate", errorId);
             }

@@ -34,7 +34,7 @@ internal sealed class ProblemResponseWriter
         _logger = loggerFactory.CreateLogger("FaultTrace");
     }
 
-    public async Task WriteAsync(HttpContext context, Fault fault, Exception exception, string? culture)
+    public async Task WriteAsync(HttpContext context, Fault fault, Exception? exception, string? culture)
     {
         var options = _options.CurrentValue;
 
@@ -46,12 +46,19 @@ internal sealed class ProblemResponseWriter
                 fault,
                 context.Request.PathBase.Add(context.Request.Path).ToString(),
                 fault.TraceId ?? context.TraceIdentifier,
-                _exposure.IsAllowed(context) ? exception : null),
+                exception != null && _exposure.IsAllowed(context) ? exception : null),
             Enrich(context, fault),
             (key, failure) => _logger.LogError(failure, "FaultTrace left out problem field {Field} of fault {ErrorId}", key, fault.ErrorId));
 
         var response = context.Response;
-        response.Clear();
+
+        // After an exception the headers are from a request that failed. Without one they are deliberate, such as
+        // WWW-Authenticate on a 401 or Allow on a 405, and must stay.
+        if (exception != null)
+        {
+            response.Clear();
+        }
+
         response.StatusCode = fault.Status;
         response.ContentType = ContentType;
         response.ContentLength = body.Length;

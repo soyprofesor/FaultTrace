@@ -32,6 +32,12 @@ public static class FaultCodes
     /// <summary>The requested resource does not exist.</summary>
     public const string NotFound = "not_found";
 
+    /// <summary>The resource does not support the request method.</summary>
+    public const string MethodNotAllowed = "method_not_allowed";
+
+    /// <summary>The request content type is not supported.</summary>
+    public const string UnsupportedMediaType = "unsupported_media_type";
+
     /// <summary>The record already exists.</summary>
     public const string Duplicate = "duplicate";
 
