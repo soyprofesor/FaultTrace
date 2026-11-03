@@ -58,6 +58,7 @@ dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_style.underscore_camel.capitalization = camel_case
 
 # Not available on every target framework.
+dotnet_diagnostic.ASP0015.severity = none
 dotnet_diagnostic.CA1510.severity = none
 
 [tests/**.cs]

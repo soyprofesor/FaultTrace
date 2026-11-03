@@ -66,12 +66,18 @@ internal sealed class ValidationProblemResult : IActionResult
         return errors.ToDictionary(pair => pair.Key, pair => (IReadOnlyList<string>)pair.Value);
     }
 
-    // A key that is a JSON path comes from the input formatter, and its text is a raw parser message with .NET type
-    // names. An error with no text at all holds only an exception. Neither may reach the user.
+    // A raw parser message can name .NET types, and an error with no text at all holds only an exception.
+    // Neither may reach the user.
     private static string GetMessage(string key, ModelError error, string generic) =>
-        key.StartsWith('$') || string.IsNullOrEmpty(error.ErrorMessage)
+        string.IsNullOrEmpty(error.ErrorMessage) || IsParserMessage(key, error.ErrorMessage)
             ? generic
             : error.ErrorMessage;
+
+    // System.Text.Json reports under a JSON path. Newtonsoft keeps the plain field name, and its messages always end
+    // with the position: "... Path 'amount', line 1, position 15."
+    private static bool IsParserMessage(string key, string message) =>
+        key.StartsWith('$')
+        || (message.Contains(" Path '") && message.Contains("', line ") && message.Contains(", position "));
 
     // "Items[0].Name" and "$.items[0].name" both become "items[0].name", the name the client sent.
     private static string GetField(string key)
