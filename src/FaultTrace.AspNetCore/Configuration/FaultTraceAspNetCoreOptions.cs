@@ -1,4 +1,5 @@
 using System;
+using FaultTrace.Core.Localization;
 using FaultTrace.Core.Model;
 using FaultTrace.Core.Options;
 using Microsoft.AspNetCore.Http;
@@ -83,6 +84,32 @@ public sealed class FaultTraceAspNetCoreOptions
     public FaultTraceAspNetCoreOptions AddCultureAlias(string alias, string culture)
     {
         _core.AddCultureAlias(alias, culture);
+        return this;
+    }
+
+    /// <summary>
+    /// Gets library-generated texts from the project's own store, such as resource files or a database.
+    /// The culture is a parameter, so this never depends on the thread culture. Read once at startup.
+    /// </summary>
+    /// <param name="lookup">
+    /// Gets the texts for a fault code and a supported culture. It runs on the error path, so keep it fast.
+    /// <see langword="null"/> means the built-in text is used, and a failure is logged and does the same.
+    /// </param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceAspNetCoreOptions UseMessages(Func<string, string, FaultMessage?> lookup)
+    {
+        _core.UseMessages(lookup);
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a culture that clients may request. Only needed for a culture that has its texts in <see cref="UseMessages"/>. Read once at startup.
+    /// </summary>
+    /// <param name="culture">The culture, for example <c>kk</c>.</param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceAspNetCoreOptions AddCulture(string culture)
+    {
+        _core.AddCulture(culture);
         return this;
     }
 

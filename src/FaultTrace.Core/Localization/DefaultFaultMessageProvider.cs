@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using FaultTrace.Core.Model;
 using FaultTrace.Core.Options;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace FaultTrace.Core.Localization;
@@ -11,10 +13,15 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
     private readonly Dictionary<string, Dictionary<string, FaultMessage>> _messages;
     private readonly Dictionary<string, string> _aliases;
     private readonly string _defaultCulture;
+    private readonly Func<string, string, FaultMessage?>? _lookup;
+    private readonly ILogger _logger;
 
-    public DefaultFaultMessageProvider(IOptions<FaultTraceOptions> options)
+    public DefaultFaultMessageProvider(IOptions<FaultTraceOptions> options, ILogger? logger = null)
     {
         var values = options.Value;
+
+        _lookup = values.MessageLookup;
+        _logger = logger ?? NullLogger.Instance;
 
         _messages = new Dictionary<string, Dictionary<string, FaultMessage>>(StringComparer.OrdinalIgnoreCase);
         foreach (var culture in FaultMessageCatalog.Create())
@@ -54,11 +61,29 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
         return FindIn(culture, code) ?? FindIn(_defaultCulture, code) ?? FindIn(CultureNormalizer.English, code);
     }
 
+    // The project's store comes first in each culture, so a text missing there stays in the requested language.
     private FaultMessage? FindIn(string culture, string code)
     {
-        return _messages.TryGetValue(culture, out var messages) && messages.TryGetValue(code, out var message)
-            ? message
-            : null;
+        return FromLookup(culture, code)
+            ?? (_messages.TryGetValue(culture, out var messages) && messages.TryGetValue(code, out var message) ? message : null);
+    }
+
+    private FaultMessage? FromLookup(string culture, string code)
+    {
+        if (_lookup == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return _lookup(code, culture);
+        }
+        catch (Exception failure)
+        {
+            _logger.LogError(failure, "FaultTrace message lookup failed for {Code} in {Culture}", code, culture);
+            return null;
+        }
     }
 
     public string? FindCulture(string? culture)
@@ -80,6 +105,15 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
             return builtIn;
         }
 
-        return _messages.ContainsKey(key) ? key : null;
+        // The name as registered, never the client's spelling: a project's lookup may compare it.
+        foreach (var name in _messages.Keys)
+        {
+            if (string.Equals(name, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return name;
+            }
+        }
+
+        return null;
     }
 }

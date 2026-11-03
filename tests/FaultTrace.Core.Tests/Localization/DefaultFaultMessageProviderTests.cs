@@ -133,6 +133,81 @@ public class DefaultFaultMessageProviderTests
         Create().Get("project_specific", "ru").Title.ShouldBe("Непредвиденная ошибка");
     }
 
+    [Fact]
+    public void Lookup_WinsOverBuiltInAndOwnTexts()
+    {
+        var provider = Create(options => options
+            .SetMessage("ru", FaultCodes.NotFound, "Set", "Set")
+            .UseMessages((code, culture) => new FaultMessage(code + " title", culture + " detail")));
+
+        var message = provider.Get(FaultCodes.NotFound, "ru");
+
+        message.Title.ShouldBe("not_found title");
+        message.Detail.ShouldBe("ru detail");
+    }
+
+    [Fact]
+    public void LookupWithoutAText_KeepsTheRequestedLanguage()
+    {
+        var provider = Create(options => options.UseMessages((code, culture) => culture == "en" ? new FaultMessage("English", "English") : null));
+
+        provider.Get(FaultCodes.NotFound, "ru").Title.ShouldBe("Не найдено");
+    }
+
+    [Fact]
+    public void LookupForAnotherCulture_IsTriedInTheFallbackOrder()
+    {
+        var provider = Create(options => options
+            .AddCulture("kk")
+            .UseMessages((code, culture) => culture == "en" ? new FaultMessage("From store", "From store") : null));
+
+        provider.Get(FaultCodes.NotFound, "kk").Title.ShouldBe("From store");
+    }
+
+    [Fact]
+    public void FailingLookup_IsLoggedAndUsesTheBuiltInText()
+    {
+        var logger = new FaultTrace.Core.Tests.Translation.CapturingLogger();
+        var options = new FaultTraceOptions().UseMessages((code, culture) => throw new NotSupportedException("store failure"));
+        var provider = new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(options), logger);
+
+        provider.Get(FaultCodes.NotFound, "ru").Title.ShouldBe("Не найдено");
+        logger.Entries.ShouldContain(entry => entry.Exception is NotSupportedException);
+    }
+
+    [Fact]
+    public void LookupReturningEmptyText_IsLoggedAndUsesTheBuiltInText()
+    {
+        var logger = new FaultTrace.Core.Tests.Translation.CapturingLogger();
+        var options = new FaultTraceOptions().UseMessages((code, culture) => new FaultMessage(string.Empty, string.Empty));
+        var provider = new DefaultFaultMessageProvider(Microsoft.Extensions.Options.Options.Create(options), logger);
+
+        provider.Get(FaultCodes.NotFound, "ru").Title.ShouldBe("Не найдено");
+        logger.Entries.ShouldNotBeEmpty();
+    }
+
+    [Fact]
+    public void AddedCulture_IsSupported()
+    {
+        var provider = Create(options => options.AddCulture("kk"));
+
+        provider.FindCulture("KK").ShouldBe("kk");
+        provider.FindCulture("kk").ShouldBe("kk");
+        provider.ResolveCulture("kk").ShouldBe("kk");
+    }
+
+    [Fact]
+    public void AddedCultureWithoutTexts_FallsBackToEnglish()
+    {
+        Create(options => options.AddCulture("kk")).Get(FaultCodes.NotFound, "kk").Title.ShouldBe("Not found");
+    }
+
+    [Fact]
+    public void UnknownCultureInLookup_IsNotSupported()
+    {
+        Create(options => options.UseMessages((code, culture) => null)).FindCulture("kk").ShouldBeNull();
+    }
+
     private static DefaultFaultMessageProvider Create(Action<FaultTraceOptions>? configure = null)
     {
         var options = new FaultTraceOptions();

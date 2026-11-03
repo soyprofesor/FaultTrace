@@ -22,6 +22,8 @@ public sealed class FaultTraceOptions
     internal Dictionary<Type, Func<Exception, FaultProblem?>> ExceptionMappings { get; } =
         new Dictionary<Type, Func<Exception, FaultProblem?>>();
 
+    internal Func<string, string, FaultMessage?>? MessageLookup { get; private set; }
+
     /// <summary>
     /// Overrides a built-in text or adds one for a new culture.
     /// </summary>
@@ -53,6 +55,37 @@ public sealed class FaultTraceOptions
     public FaultTraceOptions AddCultureAlias(string alias, string culture)
     {
         Aliases[Guard.NotEmpty(alias, nameof(alias))] = Guard.NotEmpty(culture, nameof(culture));
+        return this;
+    }
+
+    /// <summary>
+    /// Gets library-generated texts from the project's own store, such as resource files or a database.
+    /// The culture is a parameter, so this never depends on the thread culture.
+    /// </summary>
+    /// <param name="lookup">
+    /// Gets the texts for a fault code and a supported culture. It runs on the error path, so keep it fast.
+    /// <see langword="null"/> means the built-in text is used, and a failure is logged and does the same.
+    /// </param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceOptions UseMessages(Func<string, string, FaultMessage?> lookup)
+    {
+        MessageLookup = lookup ?? throw new ArgumentNullException(nameof(lookup));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a culture that clients may request. Only needed for a culture that has its texts in <see cref="UseMessages"/>.
+    /// </summary>
+    /// <param name="culture">The culture, for example <c>kk</c>.</param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceOptions AddCulture(string culture)
+    {
+        var key = CultureNormalizer.Normalize(culture) ?? Guard.NotEmpty(culture, nameof(culture));
+        if (!Messages.ContainsKey(key))
+        {
+            Messages[key] = new Dictionary<string, FaultMessage>();
+        }
+
         return this;
     }
 

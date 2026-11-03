@@ -35,7 +35,9 @@ public static class FaultTraceServiceCollectionExtensions
             services.Configure(configure);
         }
 
-        services.TryAddSingleton<IFaultMessageProvider, DefaultFaultMessageProvider>();
+        services.TryAddSingleton<IFaultMessageProvider>(provider => new DefaultFaultMessageProvider(
+            provider.GetRequiredService<IOptions<FaultTraceOptions>>(),
+            provider.GetService<ILoggerFactory>()?.CreateLogger("FaultTrace")));
         // Registered here, so it comes before the providers added to the builder.
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IFaultProvider, ExceptionFaultProvider>(provider => new ExceptionFaultProvider(
             provider.GetRequiredService<IOptions<FaultTraceOptions>>(),
