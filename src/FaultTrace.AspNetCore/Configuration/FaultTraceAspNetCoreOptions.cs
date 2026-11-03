@@ -85,4 +85,18 @@ public sealed class FaultTraceAspNetCoreOptions
         _core.AddCultureAlias(alias, culture);
         return this;
     }
+
+    /// <summary>
+    /// Says what a project's exception means, without changing its class. It also covers derived types, and the most
+    /// specific mapping wins. A mapping comes before <see cref="Core.Abstractions.IFaultException"/> and all providers. Read once at startup.
+    /// </summary>
+    /// <typeparam name="TException">The exception type.</typeparam>
+    /// <param name="map">Reads the exception. <see langword="null"/> leaves it to the next rule, and a failure is logged and does the same.</param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceAspNetCoreOptions MapException<TException>(Func<TException, FaultProblem?> map)
+        where TException : Exception
+    {
+        _core.MapException(map);
+        return this;
+    }
 }

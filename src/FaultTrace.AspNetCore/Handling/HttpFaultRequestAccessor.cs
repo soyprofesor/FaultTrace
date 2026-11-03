@@ -1,3 +1,4 @@
+using FaultTrace.AspNetCore.Culture;
 using FaultTrace.AspNetCore.Users;
 using FaultTrace.Core.Abstractions;
 using Microsoft.AspNetCore.Http;
@@ -8,11 +9,13 @@ internal sealed class HttpFaultRequestAccessor : IFaultRequestAccessor
 {
     private readonly IHttpContextAccessor _contexts;
     private readonly FaultUserResolver _users;
+    private readonly FaultCultureResolver _cultures;
 
-    public HttpFaultRequestAccessor(IHttpContextAccessor contexts, FaultUserResolver users)
+    public HttpFaultRequestAccessor(IHttpContextAccessor contexts, FaultUserResolver users, FaultCultureResolver cultures)
     {
         _contexts = contexts;
         _users = users;
+        _cultures = cultures;
     }
 
     public FaultRequest? GetCurrent()
@@ -29,6 +32,7 @@ internal sealed class HttpFaultRequestAccessor : IFaultRequestAccessor
             context.Request.Method,
             _users.Resolve(context),
             context.TraceIdentifier,
-            context.RequestAborted.IsCancellationRequested);
+            context.RequestAborted.IsCancellationRequested,
+            _cultures.Resolve(context));
     }
 }

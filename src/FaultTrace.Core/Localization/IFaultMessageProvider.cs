@@ -20,6 +20,14 @@ public interface IFaultMessageProvider
     string? FindCulture(string? culture);
 
     /// <summary>
+    /// Finds the texts for a fault code, with the same culture fallback as <see cref="Get"/>.
+    /// </summary>
+    /// <param name="code">The fault code. See <see cref="Model.FaultCodes"/>.</param>
+    /// <param name="culture">A culture returned by <see cref="ResolveCulture"/>.</param>
+    /// <returns>The texts, or <see langword="null"/> if no culture has this code, as with a project's own code.</returns>
+    FaultMessage? Find(string code, string culture);
+
+    /// <summary>
     /// Gets the texts for a fault code. Falls back to the default culture, then to English, and never returns empty text.
     /// </summary>
     /// <param name="code">The fault code. See <see cref="Model.FaultCodes"/>.</param>

@@ -42,7 +42,7 @@ internal sealed class ProblemResponseWriter
         var body = ProblemJsonWriter.Write(
             new ProblemJsonWriter.Problem(
                 GetTypeUri(options.TypeBaseUri, fault.Code),
-                _messages.Get(fault.Code, _messages.ResolveCulture(culture)).Title,
+                GetTitle(fault, _messages.ResolveCulture(culture)),
                 fault,
                 context.Request.PathBase.Add(context.Request.Path).ToString(),
                 fault.TraceId ?? context.TraceIdentifier,
@@ -72,6 +72,10 @@ internal sealed class ProblemResponseWriter
         // The request may already be aborted, and that token must not stop the response.
         await response.Body.WriteAsync(body, 0, body.Length, CancellationToken.None).ConfigureAwait(false);
     }
+
+    // A project's own code usually has no texts, and the generic "unexpected" title would be wrong for it.
+    private string GetTitle(Fault fault, string culture) =>
+        (_messages.Find(fault.Code, culture) ?? _messages.Get(FaultCodes.ForCategory(fault.Category), culture)).Title;
 
     private static string GetTypeUri(string? baseUri, string code)
     {

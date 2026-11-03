@@ -57,7 +57,7 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
         var request = GetRequest();
         try
         {
-            resolvedCulture = _messages.ResolveCulture(culture);
+            resolvedCulture = _messages.ResolveCulture(culture ?? request?.Culture);
             fault = Create(exception, resolvedCulture, request);
         }
         catch (Exception failure)
@@ -85,7 +85,7 @@ internal sealed class FaultTranslator : IFaultTranslator, IFaultFactory
         var request = GetRequest();
         try
         {
-            resolvedCulture = _messages.ResolveCulture(culture);
+            resolvedCulture = _messages.ResolveCulture(culture ?? request?.Culture);
             var message = _messages.Get(code, resolvedCulture);
             fault = new Fault(ErrorIdGenerator.NewId(), category, code, message.Detail, status, traceId: GetTraceId() ?? request?.TraceId, errors: errors);
         }

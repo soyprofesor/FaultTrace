@@ -88,6 +88,7 @@ public static class FaultTraceAspNetCoreServiceCollectionExtensions
         services.TryAddSingleton<DetailExposureEvaluator>();
         services.TryAddSingleton<ProblemResponseWriter>();
         services.TryAddSingleton<IFaultRequestAccessor, HttpFaultRequestAccessor>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IFaultProvider, BadRequestFaultProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<ApiBehaviorOptions>, ApiBehaviorSetup>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<MvcOptions>, MvcSetup>());
     }

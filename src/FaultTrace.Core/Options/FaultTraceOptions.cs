@@ -19,6 +19,9 @@ public sealed class FaultTraceOptions
     internal Dictionary<string, string> Aliases { get; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    internal Dictionary<Type, Func<Exception, FaultProblem?>> ExceptionMappings { get; } =
+        new Dictionary<Type, Func<Exception, FaultProblem?>>();
+
     /// <summary>
     /// Overrides a built-in text or adds one for a new culture.
     /// </summary>
@@ -50,6 +53,25 @@ public sealed class FaultTraceOptions
     public FaultTraceOptions AddCultureAlias(string alias, string culture)
     {
         Aliases[Guard.NotEmpty(alias, nameof(alias))] = Guard.NotEmpty(culture, nameof(culture));
+        return this;
+    }
+
+    /// <summary>
+    /// Says what a project's exception means, without changing its class. It also covers derived types, and the most
+    /// specific mapping wins. A mapping comes before <see cref="Abstractions.IFaultException"/> and all providers.
+    /// </summary>
+    /// <typeparam name="TException">The exception type.</typeparam>
+    /// <param name="map">Reads the exception. <see langword="null"/> leaves it to the next rule, and a failure is logged and does the same.</param>
+    /// <returns>These options, for chaining.</returns>
+    public FaultTraceOptions MapException<TException>(Func<TException, FaultProblem?> map)
+        where TException : Exception
+    {
+        if (map == null)
+        {
+            throw new ArgumentNullException(nameof(map));
+        }
+
+        ExceptionMappings[typeof(TException)] = exception => map((TException)exception);
         return this;
     }
 }

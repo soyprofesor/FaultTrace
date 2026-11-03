@@ -25,7 +25,7 @@ public class AddFaultTraceTests
     {
         var provider = new ServiceCollection().AddLogging().AddFaultTrace().AddOracle().Services.BuildServiceProvider();
 
-        provider.GetServices<IFaultProvider>().Count().ShouldBe(1);
+        provider.GetServices<IFaultProvider>().Count(item => item.GetType().Name == "OracleFaultTranslator").ShouldBe(1);
         provider.GetRequiredService<IFaultTranslator>().ShouldNotBeNull();
         provider.GetRequiredService<IFaultRequestAccessor>().GetCurrent().ShouldBeNull();
     }

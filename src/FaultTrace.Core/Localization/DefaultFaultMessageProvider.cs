@@ -49,7 +49,7 @@ internal sealed class DefaultFaultMessageProvider : IFaultMessageProvider
             ?? _messages[CultureNormalizer.English][FaultCodes.Unexpected];
     }
 
-    private FaultMessage? Find(string code, string culture)
+    public FaultMessage? Find(string code, string culture)
     {
         return FindIn(culture, code) ?? FindIn(_defaultCulture, code) ?? FindIn(CultureNormalizer.English, code);
     }

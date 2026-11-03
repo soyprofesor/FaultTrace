@@ -303,6 +303,8 @@ public class FaultTraceMiddlewareTests
 
         public string? FindCulture(string? culture) => null;
 
+        public FaultMessage? Find(string code, string culture) => null;
+
         public FaultMessage Get(string code, string culture) => Interlocked.Increment(ref _calls) == 1
             ? new FaultMessage("x", "y")
             : throw new NotSupportedException("messages failure");

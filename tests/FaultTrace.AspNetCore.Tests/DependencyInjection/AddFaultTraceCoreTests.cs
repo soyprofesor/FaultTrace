@@ -76,7 +76,7 @@ public class AddFaultTraceCoreTests
             .Services
             .BuildServiceProvider();
 
-        services.GetServices<IFaultProvider>().Count().ShouldBe(1);
+        services.GetServices<IFaultProvider>().Count(item => item.GetType().Name == "OracleFaultTranslator").ShouldBe(1);
     }
 
     [Fact]

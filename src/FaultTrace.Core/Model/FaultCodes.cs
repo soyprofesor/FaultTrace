@@ -55,4 +55,35 @@ public static class FaultCodes
 
     /// <summary>The client aborted the request.</summary>
     public const string ClientClosed = "client_closed";
+
+    /// <summary>
+    /// Gets the built-in code whose texts suit a category. Used when a project's own code has no texts.
+    /// </summary>
+    /// <param name="category">The category.</param>
+    /// <returns>The code.</returns>
+    public static string ForCategory(FaultCategory category)
+    {
+        switch (category)
+        {
+            case FaultCategory.Business:
+            case FaultCategory.Conflict:
+                return Business;
+            case FaultCategory.Validation:
+                return Validation;
+            case FaultCategory.Unauthorized:
+                return Unauthorized;
+            case FaultCategory.Forbidden:
+                return Forbidden;
+            case FaultCategory.NotFound:
+                return NotFound;
+            case FaultCategory.Transient:
+                return Unavailable;
+            case FaultCategory.Timeout:
+                return Timeout;
+            case FaultCategory.ClientClosed:
+                return ClientClosed;
+            default:
+                return Unexpected;
+        }
+    }
 }

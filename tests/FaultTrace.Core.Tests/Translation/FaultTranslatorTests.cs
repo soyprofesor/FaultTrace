@@ -459,6 +459,8 @@ public class FaultTranslatorTests
 
         public string? FindCulture(string? culture) => throw new InvalidOperationException("Message failure");
 
+        public FaultMessage? Find(string code, string culture) => throw new InvalidOperationException("Message failure");
+
         public FaultMessage Get(string code, string culture) => throw new InvalidOperationException("Message failure");
     }
 

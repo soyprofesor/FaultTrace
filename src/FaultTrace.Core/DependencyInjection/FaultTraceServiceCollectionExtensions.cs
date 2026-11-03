@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace FaultTrace.Core.DependencyInjection;
 
@@ -35,6 +36,11 @@ public static class FaultTraceServiceCollectionExtensions
         }
 
         services.TryAddSingleton<IFaultMessageProvider, DefaultFaultMessageProvider>();
+        // Registered here, so it comes before the providers added to the builder.
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IFaultProvider, ExceptionFaultProvider>(provider => new ExceptionFaultProvider(
+            provider.GetRequiredService<IOptions<FaultTraceOptions>>(),
+            provider.GetRequiredService<IFaultMessageProvider>(),
+            provider.GetService<ILoggerFactory>()?.CreateLogger("FaultTrace") ?? NullLogger.Instance)));
         services.TryAddSingleton(provider => new FaultTranslator(
             provider.GetServices<IFaultProvider>(),
             provider.GetServices<IFaultHook>(),
