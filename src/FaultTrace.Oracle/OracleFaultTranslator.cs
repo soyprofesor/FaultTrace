@@ -43,9 +43,9 @@ internal sealed class OracleFaultTranslator : IFaultProvider
             _logger.LogWarning("FaultTrace could not parse an Oracle message, so fault {ErrorId} has no stack details", context.ErrorId);
         }
 
-        var number = error.Number > 0 ? error.Number : parsed.Number;
+        var number = error.Number != 0 && error.Number.HasValue ? error.Number : parsed.Number;
         var nativeCode = number.HasValue
-            ? "ORA-" + number.Value.ToString("D5", CultureInfo.InvariantCulture)
+            ? GetNativeCode(number.Value)
             : parsed.NativeCode;
 
         var culture = context.Culture ?? _messages.ResolveCulture(null);
@@ -70,6 +70,10 @@ internal sealed class OracleFaultTranslator : IFaultProvider
                 error.Message,
                 !classification.IsMapped));
     }
+
+    // A negative number comes from the driver and has no ORA code.
+    private static string GetNativeCode(int number) =>
+        (number < 0 ? "ODP" : "ORA-") + number.ToString("D5", CultureInfo.InvariantCulture);
 
     private OracleClassification Classify(int? number)
     {

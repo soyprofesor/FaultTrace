@@ -50,6 +50,24 @@ public class OracleSessionTests
     }
 
     [OracleFact]
+    public void ConnectionTimeout_IsUnavailable()
+    {
+        var builder = new OracleConnectionStringBuilder(OracleTestDatabase.ConnectionString)
+        {
+            DataSource = "localhost:1/NOTHING",
+            ConnectionTimeout = 1,
+            Pooling = false,
+        };
+        using var connection = new OracleConnection(builder.ConnectionString);
+
+        var exception = Should.Throw<OracleException>(() => connection.Open());
+        var fault = OracleTestDatabase.Translator().Translate(exception);
+
+        fault.Code.ShouldBe(FaultCodes.Unavailable);
+        fault.Provider!.IsUnmapped.ShouldBeFalse();
+    }
+
+    [OracleFact]
     public void NobodyListening_IsUnavailable()
     {
         var builder = new OracleConnectionStringBuilder(OracleTestDatabase.ConnectionString)

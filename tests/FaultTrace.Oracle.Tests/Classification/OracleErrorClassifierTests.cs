@@ -38,8 +38,12 @@ public class OracleErrorClassifierTests
     [InlineData(3135, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12000, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12541, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(50000, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(50012, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(50201, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(-1000, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(-1012, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(-6001, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12999, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(1013, "timeout", 504, FaultCategory.Timeout)]
     public void Classify_MappedCodes(int number, string code, int status, FaultCategory category)
@@ -58,7 +62,7 @@ public class OracleErrorClassifierTests
     [InlineData(21000)]
     [InlineData(11999)]
     [InlineData(13000)]
-    [InlineData(50000)]
+    [InlineData(59999)]
     public void Classify_UnknownCodes_AreUnexpectedAndUnmapped(int? number)
     {
         var result = OracleErrorClassifier.Classify(number);

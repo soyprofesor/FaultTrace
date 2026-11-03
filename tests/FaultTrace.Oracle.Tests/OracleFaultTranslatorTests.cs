@@ -41,6 +41,21 @@ public class OracleFaultTranslatorTests
         fault.IsTransient.ShouldBeFalse();
     }
 
+    [Theory]
+    [InlineData("Oracle Communication: Failed to connect to server or failed to parse connect string", -6001, "ODP-06001")]
+    [InlineData("Connection request timed out", -1000, "ODP-01000")]
+    [InlineData("Pooled connection request timed out", -1012, "ODP-01012")]
+    public void TryTranslate_ErrorFromAnOldDriver_IsUnavailable(string message, int number, string nativeCode)
+    {
+        var fault = Translate(message, number);
+
+        fault.Code.ShouldBe(FaultCodes.Unavailable);
+        fault.Status.ShouldBe(503);
+        fault.IsTransient.ShouldBeTrue();
+        fault.Provider!.NativeCode.ShouldBe(nativeCode);
+        fault.Provider.IsUnmapped.ShouldBeFalse();
+    }
+
     [Fact]
     public void TryTranslate_BusinessWithoutText_UsesGenericMessage()
     {

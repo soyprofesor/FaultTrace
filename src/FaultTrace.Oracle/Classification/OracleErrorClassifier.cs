@@ -46,8 +46,8 @@ internal static class OracleErrorClassifier
         Add(codes, Mapped(FaultCategory.Conflict, FaultCodes.Duplicate, 409), 1);
         Add(codes, Mapped(FaultCategory.Conflict, FaultCodes.HasDependents, 409), 2292);
         Add(codes, Mapped(FaultCategory.Internal, FaultCodes.Unexpected, 500), 1403, 1422, 6502, 6550, 942, 1031, 4061, 6508);
-        // 50012 and 50201 come from the driver itself, not the server: pool timeout and failed connection.
-        Add(codes, Unavailable, 60, 54, 4068, 3113, 3114, 3135, 50012, 50201);
+        // These come from the driver, not the server: connection timeouts and failed connections, in its old and new numbering.
+        Add(codes, Unavailable, 60, 54, 4068, 3113, 3114, 3135, 50000, 50012, 50201, -1000, -1012, -6001);
         Add(codes, Mapped(FaultCategory.Timeout, FaultCodes.Timeout, 504, isTransient: true), 1013);
 
         return codes;

@@ -22,11 +22,16 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
   </ItemGroup>
 
-  <!-- Only the integration tests talk to a real database. The library itself never references ODP.NET. -->
+  <!-- Only the samples and the integration tests talk to a real database. The library itself never references ODP.NET. -->
   <ItemGroup>
-    <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.400" />
+    <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="3.21.230" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />
+    <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.400" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
     <!-- ODP.NET still brings 8.0.1, which has known vulnerabilities. -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
   </ItemGroup>
 
   <!-- These are versioned together with the ASP.NET Core shared framework. -->
