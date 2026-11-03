@@ -1,0 +1,6 @@
+ORA-20001: Row is locked
+ORA-06512: at "APP.ORDERS_TRG", line 2
+ORA-04088: error during execution of trigger 'APP.ORDERS_TRG'
+ORA-06512: at "APP.ORDER_PACK", line 187
+ORA-06512: at line 1
+https://docs.oracle.com/error-help/db/ora-20001/

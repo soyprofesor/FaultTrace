@@ -22,6 +22,11 @@
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" Condition="'$(TargetFramework)' != 'netcoreapp3.1'" />
   </ItemGroup>
 
+  <!-- Only the integration tests talk to a real database. The library itself never references ODP.NET. -->
+  <ItemGroup>
+    <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.400" />
+  </ItemGroup>
+
   <!-- TestHost is versioned together with the ASP.NET Core shared framework. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="3.1.32" Condition="'$(TargetFramework)' == 'netcoreapp3.1'" />

@@ -13,6 +13,7 @@ namespace FaultTrace.Oracle.Parsing;
 internal static class OracleErrorParser
 {
     private const string FrameCode = "ORA-06512:";
+    private const int TriggerFailedNumber = 4088;
     private const string BacktraceLabel = "BACKTRACE";
     private const RegexOptions Options = RegexOptions.Compiled | RegexOptions.CultureInvariant;
 
@@ -170,7 +171,9 @@ internal static class OracleErrorParser
             }
         }
 
-        var originSegment = IsNewestFirst(segments, outerIndex) ? segments[segments.Count - 1] : segments[0];
+        // ORA-04088 only says that the error above it came from a trigger. It's not an error of its own.
+        var errors = segments.Where(segment => segment.Number != TriggerFailedNumber).ToList();
+        var originSegment = IsNewestFirst(errors, outerIndex) ? errors[errors.Count - 1] : errors[0];
 
         return originSegment.Frames.FirstOrDefault(frame => IsVisible(frame, ignoredPackages))
             ?? segments.SelectMany(segment => segment.Frames).FirstOrDefault(frame => IsVisible(frame, ignoredPackages))

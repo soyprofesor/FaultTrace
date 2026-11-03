@@ -55,6 +55,33 @@ public class OracleErrorParserTests
     }
 
     [Fact]
+    public void BusinessFromATrigger_TakesOriginFromTheTrigger()
+    {
+        var parsed = Parse("trigger-business.txt");
+
+        parsed.BusinessMessage.ShouldBe("Row is locked");
+        parsed.Origin!.ToString().ShouldBe("APP.ORDERS_TRG:2");
+        parsed.Entry!.ToString().ShouldBe("APP.ORDER_PACK:187");
+    }
+
+    [Fact]
+    public void TechnicalFromATrigger_TakesOriginFromTheTrigger()
+    {
+        var parsed = Parse("trigger-technical.txt");
+
+        parsed.Origin!.ToString().ShouldBe("APP.ORDERS_TRG:4");
+        parsed.Entry!.ToString().ShouldBe("APP.ORDER_PACK:187");
+    }
+
+    [Fact]
+    public void KeepErrorsInsideATrigger_TakesOriginFromTheTechnicalError()
+    {
+        var parsed = Parse("trigger-keep-errors.txt");
+
+        parsed.Origin!.ToString().ShouldBe("APP.ORDERS_TRG:4");
+    }
+
+    [Fact]
     public void DuplicatedPrefix_IsStripped()
     {
         var parsed = Parse("duplicated-prefix.txt");

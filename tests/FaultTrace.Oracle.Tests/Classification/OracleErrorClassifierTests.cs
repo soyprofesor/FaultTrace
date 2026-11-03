@@ -38,6 +38,8 @@ public class OracleErrorClassifierTests
     [InlineData(3135, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12000, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12541, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(50012, "unavailable", 503, FaultCategory.Transient)]
+    [InlineData(50201, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(12999, "unavailable", 503, FaultCategory.Transient)]
     [InlineData(1013, "timeout", 504, FaultCategory.Timeout)]
     public void Classify_MappedCodes(int number, string code, int status, FaultCategory category)
@@ -71,6 +73,7 @@ public class OracleErrorClassifierTests
     [Theory]
     [InlineData(60, true)]
     [InlineData(12541, true)]
+    [InlineData(50201, true)]
     [InlineData(1013, true)]
     [InlineData(12899, false)]
     [InlineData(1400, false)]
