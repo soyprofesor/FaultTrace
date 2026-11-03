@@ -25,6 +25,8 @@
   <!-- Only the integration tests talk to a real database. The library itself never references ODP.NET. -->
   <ItemGroup>
     <PackageVersion Include="Oracle.ManagedDataAccess.Core" Version="23.26.400" />
+    <!-- ODP.NET still brings 8.0.1, which has known vulnerabilities. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" />
   </ItemGroup>
 
   <!-- TestHost is versioned together with the ASP.NET Core shared framework. -->
