@@ -2,6 +2,13 @@
 
 ## Add it to a web application
 
+```bash
+dotnet add package FaultTrace.AspNetCore --prerelease
+dotnet add package FaultTrace.Oracle --prerelease
+```
+
+`FaultTrace.Oracle` is only needed if the project uses Oracle. In a worker without ASP.NET Core, [use `FaultTrace.Core` instead](workers.md).
+
 Register the services and put `UseFaultTrace()` first in the pipeline. Anything before it is out of its reach.
 
 ```csharp
@@ -40,8 +47,6 @@ public void Configure(IApplicationBuilder app)
     app.UseEndpoints(endpoints => endpoints.MapControllers());
 }
 ```
-
-`AddOracle()` is only needed if the project uses Oracle.
 
 ## Read the settings from configuration
 

@@ -7,7 +7,7 @@ FaultTrace turns exceptions, first of all Oracle errors (`ORA-xxxxx`), into two 
 
 The user sees a clear message and a short error ID. Developers search the logs by that ID.
 
-> **Status:** FaultTrace is in early development and isn't on NuGet yet. The public API may still change.
+> **Status:** FaultTrace is an early preview. The public API may still change.
 
 ## The problem
 
@@ -48,6 +48,11 @@ NativeCode=ORA-01400 Entry=APP.ORDER_PACK:775 Details=[schema=APP, table=ORDERS,
 ```
 
 ## Quick start
+
+```bash
+dotnet add package FaultTrace.AspNetCore --prerelease
+dotnet add package FaultTrace.Oracle --prerelease
+```
 
 ```csharp
 using FaultTrace.AspNetCore.DependencyInjection;

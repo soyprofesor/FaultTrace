@@ -4,6 +4,10 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [0.1.0-alpha] - 2026-11-03
+
+First preview. The public API may still change.
+
 ### Added
 
 - `FaultTrace.Core`: `Fault`, `IFaultTranslator`, `IFaultFactory`, `IFaultProvider`, `IFaultHook`, `IFaultException`, short error IDs, structured logging, and built-in texts in `en`, `uz-Latn`, `uz-Cyrl` and `ru`.
